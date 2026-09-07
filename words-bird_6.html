@@ -1,0 +1,2372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Word's Bird</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12141c;
+    --bg-deep:#0d0e14;
+    --panel:#1b1e2b;
+    --panel-2:#20243350;
+    --cell:#232739;
+    --cell-border:#323852;
+    --cell-hover:#2c3148;
+    --ink:#f3efe4;
+    --muted:#8a8fa3;
+    --muted-2:#5b6076;
+    --p1:#e8a33d;
+    --p1-glow:rgba(232,163,61,.38);
+    --p1-dim:rgba(232,163,61,.14);
+    --p2:#3dc9c9;
+    --p2-glow:rgba(61,201,201,.38);
+    --p2-dim:rgba(61,201,201,.14);
+    --win:#ff6f6f;
+    --win-glow:rgba(255,111,111,.5);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #1c2033 0%, transparent 60%),
+      radial-gradient(1000px 500px at 110% 10%, #1a2a2c 0%, transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Space Grotesk',sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:28px 16px 60px;
+  }
+  #app{width:100%;max-width:760px;}
+
+  /* ---------- header ---------- */
+  header{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:6px;}
+  .title{
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:clamp(34px,7vw,50px);
+    letter-spacing:-0.01em;
+    display:flex;
+    align-items:baseline;
+    gap:2px;
+    line-height:1;
+  }
+  .title .apos-bird{position:relative;display:inline-block;}
+  .title .apos-bird svg{position:absolute;top:-26px;left:-2px;width:30px;height:30px;transform:rotate(-8deg);}
+  .tagline{
+    text-align:center;color:var(--muted);font-size:14px;margin:0 0 28px;
+    letter-spacing:.02em;
+  }
+  .tagline em{color:var(--ink);font-style:normal;font-weight:600;}
+
+  /* ---------- start screen ---------- */
+  #start-screen{display:flex;flex-direction:column;align-items:center;gap:20px;padding:20px 0 10px;}
+  .rules{
+    background:var(--panel);border:1px solid var(--cell-border);border-radius:var(--radius);
+    padding:18px 20px;max-width:520px;font-size:14px;line-height:1.65;color:var(--muted);
+  }
+  .rules b{color:var(--ink);}
+  .mode-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+  .mode-card{
+    background:var(--panel);border:1px solid var(--cell-border);border-radius:var(--radius);
+    padding:22px 26px;width:220px;cursor:pointer;text-align:center;
+    transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+  }
+  .mode-card:hover{transform:translateY(-3px);border-color:var(--p2);box-shadow:0 8px 24px -8px var(--p2-glow);}
+  .mode-card .icon{font-size:30px;margin-bottom:8px;}
+  .mode-card h3{margin:0 0 6px;font-family:'Fraunces',serif;font-size:19px;font-weight:600;}
+  .mode-card p{margin:0;color:var(--muted);font-size:13px;line-height:1.5;}
+
+  /* ---------- game screen ---------- */
+  #game-screen{display:none;flex-direction:column;gap:16px;}
+  .players-row{display:flex;gap:12px;}
+  .player-panel{
+    flex:1;background:var(--panel);border:1px solid var(--cell-border);border-radius:var(--radius);
+    padding:12px 14px;position:relative;overflow:hidden;transition:border-color .2s ease, box-shadow .2s ease;
+  }
+  .player-panel.active{box-shadow:0 0 0 1px var(--ring), 0 8px 20px -10px var(--ring-glow);}
+  .player-panel.p1.active{--ring:var(--p1);--ring-glow:var(--p1-glow);border-color:var(--p1);}
+  .player-panel.p2.active{--ring:var(--p2);--ring-glow:var(--p2-glow);border-color:var(--p2);}
+  .player-name{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14.5px;margin-bottom:8px;}
+  .swatch{width:11px;height:11px;border-radius:3px;}
+  .p1 .swatch{background:var(--p1);}
+  .p2 .swatch{background:var(--p2);}
+  .timer-track{height:7px;border-radius:5px;background:var(--cell);overflow:hidden;position:relative;}
+  .timer-fill{height:100%;border-radius:5px;transition:width 1s linear, background .3s ease;}
+  .p1 .timer-fill{background:linear-gradient(90deg,var(--p1),#ffcf85);}
+  .p2 .timer-fill{background:linear-gradient(90deg,var(--p2),#8ff2f2);}
+  .timer-bird{position:absolute;top:-9px;font-size:14px;transform:translateX(-50%);transition:left 1s linear;}
+
+  .status-bar{
+    text-align:center;font-size:14px;color:var(--muted);min-height:20px;
+    padding:2px 10px;
+  }
+  .status-bar b{color:var(--ink);}
+  .status-bar.alert{color:var(--win);font-weight:600;}
+
+  .board{
+    display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;gap:5px;
+    background:var(--bg-deep);border:1px solid var(--cell-border);border-radius:var(--radius);
+    padding:8px;aspect-ratio:1/1;max-width:540px;margin:0 auto;
+  }
+  .cell{
+    background:var(--cell);border:1px solid var(--cell-border);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    aspect-ratio:1/1;
+    font-family:'JetBrains Mono',monospace;font-weight:700;
+    font-size:clamp(14px,3vw,19px);
+    padding:8px;
+    color:var(--ink);cursor:default;user-select:none;
+    position:relative;transition:background .15s ease, border-color .15s ease, transform .1s ease;
+  }
+  .cell.empty.placeable{cursor:pointer;}
+  .cell.empty.placeable:hover{background:var(--cell-hover);border-color:var(--muted-2);}
+  .cell.p1{background:var(--p1-dim);border-color:var(--p1);color:var(--p1);}
+  .cell.p2{background:var(--p2-dim);border-color:var(--p2);color:var(--p2);}
+  .cell.removable{cursor:pointer;outline:2px dashed var(--win);outline-offset:-2px;animation:pulse 1s infinite;}
+  .cell.win-cell{background:var(--win) !important;border-color:var(--win) !important;color:#1a0f0f !important;box-shadow:0 0 18px var(--win-glow);transform:scale(1.05);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.55;}}
+  .board.size-11{gap:3px;padding:6px;}
+  .board.size-11 .cell{border-radius:5px;padding:2px;font-size:clamp(9px,1.9vw,13px);}
+  .board.size-15{gap:2px;padding:5px;}
+  .board.size-15 .cell{border-radius:3px;padding:1px;font-size:clamp(7px,1.3vw,10px);}
+
+  .mode-banner{
+    text-align:center;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--p2);font-weight:600;margin-top:-8px;
+  }
+
+  .tray{
+    background:var(--panel);border:1px solid var(--cell-border);border-radius:var(--radius);
+    padding:12px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+  }
+  .tray.disabled{opacity:.4;pointer-events:none;}
+  .letter-btn{
+    width:32px;height:32px;border-radius:7px;border:1px solid var(--cell-border);background:var(--cell);
+    color:var(--ink);font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;cursor:pointer;
+    transition:all .12s ease;
+  }
+  .letter-btn:hover{border-color:var(--muted-2);background:var(--cell-hover);}
+  .letter-btn.selected{background:var(--ink);color:var(--bg-deep);border-color:var(--ink);transform:translateY(-2px);}
+
+  .hint{text-align:center;font-size:12.5px;color:var(--muted-2);margin-top:-6px;}
+
+  .controls-row{display:flex;justify-content:center;gap:10px;}
+  .ghost-btn{
+    background:transparent;border:1px solid var(--cell-border);color:var(--muted);
+    padding:8px 16px;border-radius:9px;font-family:inherit;font-size:13px;cursor:pointer;
+  }
+  .ghost-btn:hover{border-color:var(--muted-2);color:var(--ink);}
+
+  /* ---------- win banner (in-flow, board stays visible below) ---------- */
+  #win-overlay{
+    display:none;
+  }
+  .overlay-card{
+    background:var(--panel);border:1px solid var(--cell-border);border-radius:var(--radius);
+    padding:22px 24px;text-align:center;margin-bottom:14px;
+    box-shadow:0 16px 40px -18px rgba(0,0,0,.55);
+    animation:overlay-in .25s ease;
+  }
+  @keyframes overlay-in{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+  .overlay-card .big-icon{font-size:36px;margin-bottom:4px;}
+  .overlay-card h2{font-family:'Fraunces',serif;font-size:23px;margin:0 0 6px;}
+  .overlay-card .word-pill{
+    display:inline-block;margin:6px 0 12px;padding:6px 16px;border-radius:999px;
+    font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:.06em;font-size:15px;
+    background:var(--win-dim,rgba(255,111,111,.15));color:var(--win);border:1px solid var(--win);
+  }
+  .overlay-card p{color:var(--muted);font-size:13.5px;margin:0 0 16px;line-height:1.5;}
+  .primary-btn{
+    background:var(--ink);color:var(--bg-deep);border:none;border-radius:10px;
+    padding:10px 22px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;cursor:pointer;
+  }
+  .primary-btn:hover{opacity:.88;}
+
+  @media (max-width:420px){
+    .mode-card{width:100%;}
+    .letter-btn{width:28px;height:28px;font-size:12.5px;}
+  }
+
+  /* ---------- mode card variant ---------- */
+  .mode-card.daily{border-color:var(--p1);position:relative;}
+  .mode-card.daily:hover{border-color:var(--p1);box-shadow:0 8px 24px -8px var(--p1-glow);}
+  .reward-tag{
+    margin-top:8px;display:inline-block;padding:3px 9px;border-radius:999px;
+    background:var(--p1-dim);color:var(--p1);font-size:11px;font-weight:600;border:1px solid var(--p1);
+  }
+  .feather-badge{
+    align-self:flex-end;background:var(--panel);border:1px solid var(--cell-border);
+    border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;color:var(--p1);
+  }
+  .other-challenges{max-width:560px;text-align:center;}
+  .other-label{color:var(--muted-2);font-size:12px;margin:0 0 8px;}
+  .other-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .other-chip{
+    display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--cell-border);
+    border-radius:10px;padding:7px 12px;cursor:pointer;font-size:12.5px;color:var(--muted);
+    transition:border-color .15s ease,color .15s ease;
+  }
+  .other-chip:hover{border-color:var(--muted-2);color:var(--ink);}
+  .other-chip .oc-icon{font-size:15px;}
+
+  .shop-panel{max-width:560px;text-align:center;}
+  .shop-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .shop-chip{
+    display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--cell-border);
+    border-radius:10px;padding:7px 12px;cursor:pointer;font-size:12.5px;color:var(--muted);
+    transition:border-color .15s ease,color .15s ease;
+  }
+  .shop-chip:hover{border-color:var(--muted-2);color:var(--ink);}
+  .shop-chip.equipped{border-color:var(--p1);color:var(--p1);}
+  .swatch-pair{display:flex;gap:2px;}
+  .swatch-pair span{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  .shop-name{font-weight:600;}
+  .shop-action{color:var(--muted-2);font-size:11px;}
+  .shop-chip.equipped .shop-action{color:var(--p1);}
+  .shop-msg{min-height:16px;color:var(--win);font-size:12px;margin:6px 0 0;}
+
+  /* ---------- unlockable color themes ---------- */
+  body.theme-sunset{
+    --p1:#ff8a5c; --p1-glow:rgba(255,138,92,.38); --p1-dim:rgba(255,138,92,.14);
+    --p2:#c792ea; --p2-glow:rgba(199,146,234,.38); --p2-dim:rgba(199,146,234,.14);
+  }
+  body.theme-forest{
+    --p1:#b7d968; --p1-glow:rgba(183,217,104,.38); --p1-dim:rgba(183,217,104,.14);
+    --p2:#2f9e6d; --p2-glow:rgba(47,158,109,.38); --p2-dim:rgba(47,158,109,.14);
+  }
+  body.theme-neon{
+    --p1:#ff4fd8; --p1-glow:rgba(255,79,216,.38); --p1-dim:rgba(255,79,216,.14);
+    --p2:#4bf3ff; --p2-glow:rgba(75,243,255,.38); --p2-dim:rgba(75,243,255,.14);
+  }
+
+  /* ---------- word search screen ---------- */
+  #wordsearch-screen{display:none;flex-direction:column;gap:14px;}
+  .ws-grid{
+    display:grid;gap:3px;background:var(--bg-deep);border:1px solid var(--cell-border);
+    border-radius:var(--radius);padding:6px;aspect-ratio:1/1;max-width:480px;margin:0 auto;
+  }
+  .ws-cell{
+    aspect-ratio:1/1;background:var(--cell);border:1px solid var(--cell-border);border-radius:5px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(10px,2.2vw,15px);
+    color:var(--ink);cursor:pointer;user-select:none;transition:background .12s ease,border-color .12s ease;
+  }
+  .ws-cell:hover{background:var(--cell-hover);}
+  .ws-cell.selected{background:var(--p2-dim);border-color:var(--p2);color:var(--p2);}
+  .ws-cell.found{background:var(--p1-dim);border-color:var(--p1);color:var(--p1);}
+  .ws-words{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+  .ws-word{
+    padding:6px 12px;border-radius:999px;border:1px solid var(--cell-border);background:var(--panel);
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:.04em;color:var(--muted);
+  }
+  .ws-word.active{border-color:var(--p2);color:var(--p2);}
+  .ws-word.done{border-color:var(--p1);color:var(--p1);background:var(--p1-dim);text-decoration:line-through;}
+
+  /* ---------- bird airplane screen ---------- */
+  #airplane-screen{display:none;flex-direction:column;gap:14px;}
+  .air-progress{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
+  .air-letter{
+    width:30px;height:34px;border-radius:7px;border:1px solid var(--cell-border);background:var(--cell);
+    display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;
+    font-weight:700;font-size:16px;color:var(--muted-2);
+  }
+  .air-letter.filled{border-color:var(--p1);color:var(--p1);background:var(--p1-dim);}
+  .air-letter.next{border-color:var(--p2);color:var(--p2);animation:pulse 1s infinite;}
+  .air-area{
+    position:relative;height:320px;background:var(--bg-deep);border:1px solid var(--cell-border);
+    border-radius:var(--radius);overflow:hidden;
+  }
+  .air-plane{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%) scaleX(-1);
+    font-size:30px;z-index:2;filter:drop-shadow(0 0 6px rgba(232,163,61,.5));
+  }
+  .air-tile{
+    position:absolute;width:34px;height:34px;border-radius:8px;background:var(--panel);
+    border:1px solid var(--p2);color:var(--p2);display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;cursor:default;z-index:1;
+    box-shadow:0 4px 12px -4px rgba(0,0,0,.5);transform:translateY(-50%);
+  }
+  .air-controls{display:flex;align-items:center;justify-content:center;gap:14px;}
+  .air-pad{display:flex;flex-direction:column;gap:6px;}
+  .air-btn{
+    background:var(--panel);border:1px solid var(--cell-border);color:var(--ink);
+    border-radius:9px;padding:10px 16px;font-size:16px;font-weight:700;cursor:pointer;
+    transition:background .12s ease, border-color .12s ease;user-select:none;
+  }
+  .air-btn:hover{background:var(--cell-hover);border-color:var(--muted-2);}
+  .air-btn:active{background:var(--p2-dim);border-color:var(--p2);}
+  .air-btn.air-shoot{background:var(--p1-dim);border-color:var(--p1);color:var(--p1);font-size:15px;padding:16px 22px;}
+  .air-btn.air-shoot:active{background:var(--p1);color:var(--bg-deep);}
+
+  /* ---------- party (Sunday) ---------- */
+  #party-screen{display:none;flex-direction:column;gap:14px;}
+  .party-bowl{
+    position:relative;min-height:260px;
+    padding:40px 34px 26px;
+    display:flex;flex-wrap:wrap;align-content:flex-start;gap:10px;justify-content:center;
+  }
+  .party-bowl::before{
+    content:'';
+    position:absolute;inset:0;
+    background:repeating-linear-gradient(45deg,#c0392b 0 18px,#f4e9d8 18px 36px);
+    clip-path:polygon(12% 0%, 88% 0%, 74% 100%, 26% 100%);
+    border-radius:8px 8px 0 0;
+    z-index:0;
+  }
+  .fry{
+    position:relative;z-index:1;
+    background:linear-gradient(160deg,#ffd873,#f4b942);
+    color:#5c3a0a;border:1px solid #d99a2b;border-radius:6px;
+    padding:10px 9px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11.5px;
+    cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,.28);
+    transition:transform .18s ease, opacity .2s ease;
+    min-width:56px;text-align:center;user-select:none;
+  }
+  .fry:hover{transform:translateY(-3px) scale(1.06);}
+  .fry.eaten-good{opacity:0;transform:scale(.3) translateY(-24px);}
+  .fry.eaten-bad{opacity:0;transform:scale(.3) rotate(30deg);background:linear-gradient(160deg,#ff8a7a,#e05545);}
+
+  /* ---------- gravity's bird (Friday) ---------- */
+  #gravity-screen{display:none;flex-direction:column;gap:14px;}
+  .gb-goal{text-align:center;margin:0;font-size:13px;color:var(--muted);}
+  .gb-goal b{color:var(--p1);letter-spacing:.08em;font-family:'JetBrains Mono',monospace;}
+  .gb-board{
+    display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(12,1fr);gap:2px;
+    background:var(--bg-deep);border:1px solid var(--cell-border);border-radius:var(--radius);
+    padding:6px;aspect-ratio:1/1;max-width:460px;margin:0 auto;
+  }
+  .gb-cell{
+    aspect-ratio:1/1;background:transparent;border-radius:2px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(7px,1.3vw,10px);
+    color:var(--ink);position:relative;
+  }
+  .gb-cell.gb-target{outline:2px dashed var(--p1);outline-offset:-2px;animation:pulse 1.4s infinite;border-radius:4px;}
+  .gb-cell.gb-target-filled{background:var(--p1-dim);outline:2px solid var(--p1);color:var(--p1);border-radius:4px;}
+  .gb-cell.gb-platform{background:linear-gradient(180deg,#6b5438,#3d2f20);border-radius:3px;box-shadow:inset 0 2px 0 rgba(255,255,255,.1);}
+  .gb-cell.gb-platform-falling{background:linear-gradient(180deg,#8a5a2e,#4a2f12);box-shadow:inset 0 2px 0 rgba(255,180,80,.35);animation:pulse 1s infinite;}
+  .gb-cell.gb-deco{background:linear-gradient(180deg,#3a3f57,#2a2e42);border-radius:3px;opacity:.65;}
+  .gb-cell.gb-spike{background:linear-gradient(180deg,#3d1414,#5c1e1e);color:#ff6f6f;font-size:12px;border-radius:3px;box-shadow:inset 0 0 6px rgba(255,80,80,.5);}
+  .gb-cell.gb-active{background:var(--p2-dim);outline:2px solid var(--p2);color:var(--p2);border-radius:4px;box-shadow:0 0 10px var(--p2-glow);z-index:2;}
+  .gb-controls{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;}
+  .gb-hpad{display:flex;gap:6px;}
+
+  /* ---------- maze chase (Saturday) ---------- */
+  #mazechase-screen{display:none;flex-direction:column;gap:14px;}
+  .mc-dpad{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .maze-grid{
+    display:grid;gap:0;
+    background:#0a0b10;border:1px solid var(--cell-border);border-radius:var(--radius);
+    padding:4px;aspect-ratio:1/1;max-width:460px;margin:0 auto;
+  }
+  .maze-cell{
+    aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;
+    font-size:clamp(7px,1.6vw,12px);font-family:'JetBrains Mono',monospace;font-weight:700;
+    color:var(--ink);
+  }
+  .maze-cell.mc-wall{background:#232739;}
+  .maze-cell.mc-path{background:#12141c;}
+  .maze-cell.mc-letter{background:#12141c;color:var(--p1);}
+  .maze-cell.mc-player{background:radial-gradient(circle,var(--p2-dim),transparent);}
+  .maze-cell.mc-enemy{background:radial-gradient(circle,rgba(255,111,111,.35),transparent);}
+  .maze-cell.mc-heavy{background:radial-gradient(circle,rgba(232,163,61,.4),transparent);}
+  .maze-cell.mc-block{background:linear-gradient(160deg,#6b5438,#3d2f20);box-shadow:inset 0 2px 0 rgba(255,255,255,.1);}
+  .mc-heavy-status{text-align:center;margin:0;font-size:12.5px;color:var(--p1);font-weight:600;min-height:16px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="title">Word<span class="apos-bird">'<svg viewBox="0 0 24 24" fill="none"><path d="M2 14c3-1 5-4 5-7 2 1 3 3 3 5 3-4 8-5 12-3-2 0-3 1-3 3 0 4-4 7-9 7-3 0-6-1-8-3 1 0 1.5-.5 1.5-1.5C3.5 15 2.7 14.6 2 14Z" fill="#e8a33d"/><circle cx="16" cy="8.5" r=".9" fill="#12141c"/></svg></span>s Bird</div>
+  </header>
+  <p class="tagline">Build the board. Snipe the word. <em>First to finish wins</em> — even off someone else's letters.</p>
+
+  <div id="start-screen">
+    <div class="feather-badge" id="feather-badge">🪶 <span id="feather-count">0</span></div>
+    <div class="rules">
+      A shared <b>7×7</b> board. On your turn, drop any letter on any empty square. Complete a real
+      <b>4–7 letter word</b> — across, down, or diagonally, in either direction — and you win instantly,
+      even if some of the letters were placed by your opponent. Take longer than <b>10 seconds</b> and your
+      opponent gets to remove one of your letters from the board.
+    </div>
+    <div class="mode-row">
+      <div class="mode-card" id="mode-local">
+        <div class="icon">🧑‍🤝‍🧑</div>
+        <h3>Local 2P</h3>
+        <p>Pass the screen back and forth. Two players, one board.</p>
+      </div>
+      <div class="mode-card" id="mode-ai">
+        <div class="icon">🐦</div>
+        <h3>vs The Bird</h3>
+        <p>Play against a scrappy computer opponent.</p>
+      </div>
+      <div class="mode-card daily" id="mode-daily">
+        <div class="icon" id="daily-icon">🔍</div>
+        <h3 id="daily-title">Daily Challenge</h3>
+        <p id="daily-sub">Loading…</p>
+        <div class="reward-tag" id="daily-reward-tag">🪶 +50 for beating it</div>
+      </div>
+    </div>
+    <div class="other-challenges">
+      <p class="other-label">Already beat today's? Practice any other day's challenge — no reward for these.</p>
+      <div class="other-row" id="other-row"></div>
+    </div>
+
+    <div class="shop-panel">
+      <p class="other-label">🪶 Feather Shop — spend feathers on new board color themes</p>
+      <div class="shop-row" id="shop-row"></div>
+      <p class="shop-msg" id="shop-msg"></p>
+    </div>
+  </div>
+
+  <div id="game-screen">
+    <div class="players-row">
+      <div class="player-panel p1" id="panel-0">
+        <div class="player-name"><span class="swatch"></span><span id="name-0">Player 1</span></div>
+        <div class="timer-track"><div class="timer-fill" id="timer-0" style="width:100%"></div></div>
+      </div>
+      <div class="player-panel p2" id="panel-1">
+        <div class="player-name"><span class="swatch"></span><span id="name-1">Player 2</span></div>
+        <div class="timer-track"><div class="timer-fill" id="timer-1" style="width:100%"></div></div>
+      </div>
+    </div>
+
+    <div class="mode-banner" id="mode-banner" style="display:none;"></div>
+    <div class="status-bar" id="status-bar">Pick a letter, then tap a square.</div>
+
+    <div id="win-overlay">
+      <div class="overlay-card">
+        <div class="big-icon" id="overlay-icon">🐦</div>
+        <h2 id="overlay-title">Player 1 wins!</h2>
+        <div class="word-pill" id="overlay-word">WORD</div>
+        <p id="overlay-sub">Formed on the board.</p>
+        <button class="primary-btn" id="btn-play-again">Play again</button>
+      </div>
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <div class="tray" id="tray"></div>
+    <p class="hint" id="hint-text">Words can be read in either direction along a line — 4 to 7 letters.</p>
+    <div class="controls-row"><button class="ghost-btn" id="btn-restart">Restart</button></div>
+  </div>
+
+  <div id="wordsearch-screen">
+    <div class="mode-banner" id="ws-label"></div>
+    <div class="status-bar" id="ws-status">Tap the first letter of a word, then its last letter.</div>
+    <div class="ws-grid" id="ws-grid"></div>
+    <div class="ws-words" id="ws-words"></div>
+    <div class="controls-row"><button class="ghost-btn" id="ws-back">Back to menu</button></div>
+  </div>
+
+  <div id="airplane-screen">
+    <div class="mode-banner" id="air-label"></div>
+    <div class="status-bar" id="air-status">Line up your plane with ↑ / ↓, then fire with ←.</div>
+    <div class="air-progress" id="air-progress"></div>
+    <div class="air-area" id="air-area">
+      <div class="air-plane" id="air-plane">✈️</div>
+    </div>
+    <div class="air-controls">
+      <div class="air-pad">
+        <button class="air-btn" id="air-up" aria-label="Move up">▲</button>
+        <button class="air-btn" id="air-down" aria-label="Move down">▼</button>
+      </div>
+      <button class="air-btn air-shoot" id="air-shoot" aria-label="Shoot">◀ Shoot</button>
+    </div>
+    <p class="hint">Keyboard: ↑ / ↓ to move, ← to shoot. On touch, use the buttons above.</p>
+    <div class="ws-words" id="air-words"></div>
+    <div class="controls-row">
+      <button class="primary-btn" id="air-retry" style="display:none;">Try again</button>
+      <button class="ghost-btn" id="air-back">Back to menu</button>
+    </div>
+  </div>
+
+  <div id="party-screen">
+    <div class="mode-banner" id="party-label"></div>
+    <div class="status-bar" id="party-status">Eat only the fries with real words!</div>
+    <div class="party-bowl" id="party-bowl"></div>
+    <div class="controls-row">
+      <button class="primary-btn" id="party-retry" style="display:none;">Try again</button>
+      <button class="ghost-btn" id="party-back">Back to menu</button>
+    </div>
+  </div>
+
+  <div id="gravity-screen">
+    <div class="mode-banner" id="gb-label"></div>
+    <div class="status-bar" id="gb-status">Press ↓ to bring in a letter, then jump it onto a glowing square.</div>
+    <p class="gb-goal" id="gb-goal"></p>
+    <div class="air-progress" id="gb-progress"></div>
+    <div class="gb-board" id="gb-board"></div>
+    <div class="gb-controls">
+      <button class="air-btn" id="gb-down" aria-label="Bring in next letter">▼ Bring in</button>
+      <div class="gb-hpad">
+        <button class="air-btn" id="gb-left" aria-label="Move left">◀</button>
+        <button class="air-btn" id="gb-right" aria-label="Move right">▶</button>
+      </div>
+      <button class="air-btn air-shoot" id="gb-jump" aria-label="Jump">▲ Jump</button>
+    </div>
+    <p class="hint">↓ brings in a letter · ← → steer (works mid-air too!) · ↑ jumps 3 rows. Climb 3 tiers to reach the glowing row. Watch for spikes and crumbling platforms (2s and they're gone)!</p>
+    <div class="controls-row">
+      <button class="primary-btn" id="gb-retry" style="display:none;">Try again</button>
+      <button class="ghost-btn" id="gb-back">Back to menu</button>
+    </div>
+  </div>
+
+  <div id="mazechase-screen">
+    <div class="mode-banner" id="mc-label"></div>
+    <div class="status-bar" id="mc-status">Collect all 6 letters — avoid the foxes!</div>
+    <p class="gb-goal" id="mc-goal"></p>
+    <div class="air-progress" id="mc-progress"></div>
+    <p class="mc-heavy-status" id="mc-heavy-count"></p>
+    <div class="maze-grid" id="maze-grid"></div>
+    <div class="gb-controls">
+      <div class="mc-dpad">
+        <button class="air-btn" id="mc-up" aria-label="Move up">▲</button>
+        <div class="gb-hpad">
+          <button class="air-btn" id="mc-left" aria-label="Move left">◀</button>
+          <button class="air-btn" id="mc-down" aria-label="Move down">▼</button>
+          <button class="air-btn" id="mc-right" aria-label="Move right">▶</button>
+        </div>
+      </div>
+    </div>
+    <p class="hint">Arrow keys or the pad above to move. 3 foxes are hunting you — 3 catches and you're out. There are 🧱 blocks in the maze — grab a 💪 Heavyweight for 5 seconds of pushing them out of your way.</p>
+    <div class="controls-row">
+      <button class="primary-btn" id="mc-retry" style="display:none;">Try again</button>
+      <button class="ghost-btn" id="mc-back">Back to menu</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= dictionary ================= */
+  var WORDS = ["aaron", "abandoned", "aberdeen", "abilities", "ability", "able", "aboriginal", "abortion", "about", "above", "abraham", "abroad", "absence", "absent", "absolute", "absolutely", "absorption", "abstract", "abstracts", "abuse", "academic", "academics", "academy", "accent", "accept", "acceptable", "acceptance", "accepted", "accepting", "accepts", "access", "accessed", "accessibility", "accessible", "accessing", "accessories", "accessory", "accident", "accidents", "accommodate", "accommodation", "accommodations", "accompanied", "accompanying", "accomplish", "accomplished", "accordance", "according", "accordingly", "account", "accountability", "accounting", "accounts", "accreditation", "accredited", "accuracy", "accurate", "accurately", "accused", "acdbentity", "acer", "achieve", "achieved", "achievement", "achievements", "achieving", "acid", "acids", "acknowledge", "acknowledged", "acne", "acoustic", "acquire", "acquired", "acquisition", "acquisitions", "acre", "acres", "acrobat", "across", "acrylic", "acting", "action", "actions", "activated", "activation", "active", "actively", "activists", "activities", "activity", "actor", "actors", "actress", "acts", "actual", "actually", "acute", "adam", "adams", "adaptation", "adapted", "adapter", "adapters", "adaptive", "adaptor", "added", "addiction", "adding", "addition", "additional", "additionally", "additions", "address", "addressed", "addresses", "addressing", "adds", "adelaide", "adequate", "adidas", "adipex", "adjacent", "adjust", "adjustable", "adjusted", "adjustment", "adjustments", "admin", "administered", "administration", "administrative", "administrator", "administrators", "admission", "admissions", "admit", "admitted", "adobe", "adolescent", "adopt", "adopted", "adoption", "adrian", "adsl", "adult", "adults", "advance", "advanced", "advancement", "advances", "advantage", "advantages", "adventure", "adventures", "adverse", "advert", "advertise", "advertisement", "advertisements", "advertiser", "advertisers", "advertising", "advice", "advise", "advised", "advisor", "advisors", "advisory", "advocacy", "advocate", "adware", "aerial", "aerospace", "affair", "affairs", "affect", "affected", "affecting", "affects", "affiliate", "affiliated", "affiliates", "affiliation", "afford", "affordable", "afghanistan", "afraid", "africa", "african", "after", "afternoon", "afterwards", "again", "against", "aged", "agencies", "agency", "agenda", "agent", "agents", "ages", "aggregate", "aggressive", "aging", "agree", "agreed", "agreement", "agreements", "agrees", "agricultural", "agriculture", "ahead", "aids", "aimed", "aims", "aircraft", "airfare", "airline", "airlines", "airplane", "airport", "airports", "alabama", "alan", "alarm", "alaska", "albania", "albany", "albert", "alberta", "album", "albums", "albuquerque", "alcohol", "alert", "alerts", "alex", "alexander", "alexandria", "alfred", "algebra", "algeria", "algorithm", "algorithms", "alias", "alice", "alien", "align", "alignment", "alike", "alive", "allah", "allan", "alleged", "allen", "allergy", "alliance", "allied", "allocated", "allocation", "allow", "allowance", "allowed", "allowing", "allows", "alloy", "almost", "alone", "along", "alot", "alpha", "alphabetical", "alpine", "already", "also", "alter", "altered", "alternate", "alternative", "alternatively", "alternatives", "although", "alto", "aluminium", "aluminum", "alumni", "always", "amanda", "amateur", "amazing", "amazon", "ambassador", "amber", "ambien", "ambient", "amend", "amended", "amendment", "amendments", "amenities", "america", "american", "americans", "americas", "amino", "among", "amongst", "amount", "amounts", "ampland", "amplifier", "amsterdam", "anaheim", "anal", "analog", "analysis", "analyst", "analysts", "analytical", "analyze", "analyzed", "analyzes", "anatomy", "anchor", "ancient", "andale", "anderson", "andorra", "andrea", "andreas", "andrew", "andrews", "andy", "angel", "angela", "angeles", "angels", "anger", "angle", "angola", "angry", "animal", "animals", "animated", "animation", "anime", "anna", "anne", "annex", "annie", "anniversary", "annotated", "annotation", "announce", "announced", "announcement", "announcements", "announces", "annoying", "annual", "annually", "anonymous", "another", "answer", "answered", "answering", "answers", "antarctica", "antenna", "anthony", "anthropology", "anti", "antibodies", "antibody", "anticipated", "antigua", "antique", "antiques", "antivirus", "antonio", "anxiety", "anybody", "anymore", "anyone", "anything", "anytime", "anyway", "anywhere", "apache", "apart", "apartment", "apartments", "apnic", "apollo", "apparatus", "apparel", "apparent", "apparently", "appeal", "appeals", "appear", "appearance", "appeared", "appearing", "appears", "appendix", "apple", "appliance", "appliances", "applicable", "applicant", "applicants", "application", "applications", "applied", "applies", "apply", "applying", "appointed", "appointment", "appointments", "appraisal", "appreciate", "appreciated", "appreciation", "approach", "approaches", "appropriate", "appropriations", "approval", "approve", "approved", "approx", "approximate", "approximately", "apps", "april", "aqua", "aquarium", "aquatic", "arab", "arabia", "arabic", "arbitrary", "arbitration", "arbor", "arcade", "arch", "architect", "architects", "architectural", "architecture", "archive", "archived", "archives", "arctic", "area", "areas", "arena", "argentina", "argue", "argued", "argument", "arguments", "arise", "arising", "arizona", "arkansas", "arlington", "armed", "armenia", "armor", "arms", "armstrong", "army", "arnold", "around", "arrange", "arranged", "arrangement", "arrangements", "array", "arrest", "arrested", "arrival", "arrivals", "arrive", "arrived", "arrives", "arrow", "arthritis", "arthur", "article", "articles", "artificial", "artist", "artistic", "artists", "arts", "artwork", "aruba", "asbestos", "ascii", "ashley", "asia", "asian", "aside", "asin", "asked", "asking", "asks", "aspect", "aspects", "assault", "assembled", "assembly", "assess", "assessed", "assessing", "assessment", "assessments", "asset", "assets", "assign", "assigned", "assignment", "assignments", "assist", "assistance", "assistant", "assisted", "assists", "associate", "associated", "associates", "association", "associations", "assume", "assumed", "assumes", "assuming", "assumption", "assumptions", "assurance", "assure", "assured", "asthma", "astrology", "astronomy", "asus", "asylum", "athens", "athletes", "athletic", "athletics", "atlanta", "atlantic", "atlas", "atmosphere", "atmospheric", "atom", "atomic", "attach", "attached", "attachment", "attachments", "attack", "attacked", "attacks", "attempt", "attempted", "attempting", "attempts", "attend", "attendance", "attended", "attending", "attention", "attitude", "attitudes", "attorney", "attorneys", "attract", "attraction", "attractions", "attractive", "attribute", "attributes", "auburn", "auckland", "auction", "auctions", "audi", "audience", "audio", "audit", "auditor", "august", "aurora", "austin", "australia", "australian", "austria", "authentic", "authentication", "author", "authorities", "authority", "authorization", "authorized", "authors", "auto", "automated", "automatic", "automatically", "automation", "automobile", "automobiles", "automotive", "autos", "autumn", "availability", "available", "avatar", "avenue", "average", "aviation", "avoid", "avoiding", "avon", "award", "awarded", "awards", "aware", "awareness", "away", "awesome", "awful", "axis", "azerbaijan", "babe", "babes", "babies", "baby", "bachelor", "back", "backed", "background", "backgrounds", "backing", "backup", "bacon", "bacteria", "bacterial", "badge", "badly", "baghdad", "bags", "bahamas", "bahrain", "bailey", "baker", "baking", "balance", "balanced", "bald", "bali", "ball", "ballet", "balloon", "ballot", "balls", "baltimore", "banana", "band", "bands", "bandwidth", "bang", "bangbus", "bangkok", "bangladesh", "bank", "banking", "bankruptcy", "banks", "banned", "banner", "banners", "baptist", "barbados", "barbara", "barbie", "barcelona", "bare", "barely", "bargain", "bargains", "barn", "barnes", "barrel", "barrier", "barriers", "barry", "bars", "base", "baseball", "based", "baseline", "basement", "basename", "bases", "basic", "basically", "basics", "basin", "basis", "basket", "basketball", "baskets", "bass", "batch", "bath", "bathroom", "bathrooms", "baths", "batman", "batteries", "battery", "battle", "battlefield", "bdsm", "beach", "beaches", "beads", "beam", "bean", "beans", "bear", "bearing", "bears", "beast", "beastality", "beastiality", "beat", "beatles", "beats", "beautiful", "beautifully", "beauty", "beaver", "became", "because", "become", "becomes", "becoming", "bedding", "bedford", "bedroom", "bedrooms", "beds", "beef", "been", "beer", "before", "began", "begin", "beginner", "beginners", "beginning", "begins", "begun", "behalf", "behavior", "behavioral", "behind", "beijing", "being", "beings", "belarus", "belfast", "belgium", "belief", "beliefs", "believe", "believed", "believes", "belize", "belkin", "bell", "belle", "belly", "belong", "belongs", "below", "belt", "belts", "bench", "benchmark", "bend", "beneath", "beneficial", "benefit", "benefits", "benjamin", "bennett", "bent", "benz", "berkeley", "berlin", "bermuda", "bernard", "berry", "beside", "besides", "best", "bestiality", "bestsellers", "beta", "beth", "better", "betting", "betty", "between", "beverage", "beverages", "beverly", "beyond", "bhutan", "bias", "bible", "biblical", "bibliographic", "bibliography", "bicycle", "bidder", "bidding", "bids", "bigger", "biggest", "bike", "bikes", "bikini", "bill", "billing", "billion", "bills", "billy", "binary", "bind", "binding", "bingo", "biodiversity", "biographies", "biography", "biol", "biological", "biology", "bios", "biotechnology", "bird", "birds", "birmingham", "birth", "birthday", "bishop", "bitch", "bite", "bits", "bizarre", "bizrate", "black", "blackberry", "blackjack", "blacks", "blade", "blades", "blah", "blair", "blake", "blame", "blank", "blanket", "blast", "bleeding", "blend", "bless", "blessed", "blind", "blink", "block", "blocked", "blocking", "blocks", "blog", "blogger", "bloggers", "blogging", "blogs", "blond", "blonde", "blood", "bloody", "bloom", "bloomberg", "blow", "blowing", "blowjob", "blowjobs", "blue", "blues", "bluetooth", "blvd", "board", "boards", "boat", "boating", "boats", "bobby", "bodies", "body", "bold", "bolivia", "bolt", "bomb", "bond", "bondage", "bonds", "bone", "bones", "bonus", "boob", "boobs", "book", "booking", "bookings", "bookmark", "bookmarks", "books", "bookstore", "bool", "boolean", "boom", "boost", "boot", "booth", "boots", "booty", "border", "borders", "bored", "boring", "born", "borough", "bosnia", "boss", "boston", "both", "bother", "botswana", "bottle", "bottles", "bottom", "bought", "boulder", "boulevard", "bound", "boundaries", "boundary", "bouquet", "boutique", "bowl", "bowling", "boxed", "boxes", "boxing", "boys", "bracelet", "bracelets", "bracket", "brad", "bradford", "bradley", "brain", "brake", "brakes", "branch", "branches", "brand", "brandon", "brands", "bras", "brass", "brave", "brazil", "brazilian", "breach", "bread", "break", "breakdown", "breakfast", "breaking", "breaks", "breast", "breasts", "breath", "breathing", "breed", "breeding", "breeds", "brian", "brick", "bridal", "bride", "bridge", "bridges", "brief", "briefing", "briefly", "briefs", "bright", "brighton", "brilliant", "bring", "bringing", "brings", "brisbane", "bristol", "britain", "britannica", "british", "britney", "broad", "broadband", "broadcast", "broadcasting", "broader", "broadway", "brochure", "brochures", "broke", "broken", "broker", "brokers", "bronze", "brook", "brooklyn", "brooks", "brother", "brothers", "brought", "brown", "browse", "browser", "browsers", "browsing", "bruce", "brunei", "brunette", "brunswick", "brush", "brussels", "brutal", "bryan", "bryant", "bubble", "buck", "bucks", "budapest", "buddy", "budget", "budgets", "buffalo", "buffer", "bufing", "bugs", "build", "builder", "builders", "building", "buildings", "builds", "built", "bukkake", "bulgaria", "bulgarian", "bulk", "bull", "bullet", "bulletin", "bumper", "bunch", "bundle", "bunny", "burden", "bureau", "buried", "burke", "burlington", "burn", "burner", "burning", "burns", "burst", "burton", "buses", "bush", "business", "businesses", "busty", "busy", "butler", "butt", "butter", "butterfly", "button", "buttons", "butts", "buyer", "buyers", "buying", "buys", "buzz", "byte", "bytes", "cabin", "cabinet", "cabinets", "cable", "cables", "cache", "cached", "cadillac", "cafe", "cage", "cake", "cakes", "calcium", "calculate", "calculated", "calculation", "calculations", "calculator", "calculators", "calendar", "calendars", "calgary", "calibration", "california", "call", "called", "calling", "calls", "calm", "calvin", "cambodia", "cambridge", "camcorder", "camcorders", "came", "camel", "camera", "cameras", "cameron", "cameroon", "camp", "campaign", "campaigns", "campbell", "camping", "camps", "campus", "cams", "canada", "canadian", "canal", "canberra", "cancel", "cancellation", "cancelled", "cancer", "candidate", "candidates", "candle", "candles", "candy", "cannon", "canon", "cant", "canvas", "canyon", "capabilities", "capability", "capable", "capacity", "cape", "capital", "capitol", "caps", "captain", "capture", "captured", "carb", "carbon", "card", "cardiac", "cardiff", "cardiovascular", "cards", "care", "career", "careers", "careful", "carefully", "carey", "cargo", "caribbean", "caring", "carl", "carlo", "carlos", "carmen", "carnival", "carol", "carolina", "caroline", "carpet", "carried", "carrier", "carriers", "carries", "carroll", "carry", "carrying", "cars", "cart", "carter", "cartoon", "cartoons", "cartridge", "cartridges", "casa", "case", "cases", "casey", "cash", "cashiers", "casino", "casinos", "casio", "cassette", "cast", "casting", "castle", "casual", "catalog", "catalogs", "catalogue", "catalyst", "catch", "categories", "category", "catering", "cathedral", "catherine", "catholic", "cats", "cattle", "caught", "cause", "caused", "causes", "causing", "caution", "cave", "cayman", "cdna", "cedar", "ceiling", "celebrate", "celebration", "celebrities", "celebrity", "celebs", "cell", "cells", "cellular", "celtic", "cement", "cemetery", "census", "cent", "center", "centered", "centers", "central", "centre", "centres", "cents", "centuries", "century", "ceramic", "ceremony", "certain", "certainly", "certificate", "certificates", "certification", "certified", "chad", "chain", "chains", "chair", "chairman", "chairs", "challenge", "challenged", "challenges", "challenging", "chamber", "chambers", "champagne", "champion", "champions", "championship", "championships", "chan", "chance", "chancellor", "chances", "change", "changed", "changelog", "changes", "changing", "channel", "channels", "chaos", "chapel", "chapter", "chapters", "char", "character", "characteristic", "characteristics", "characterized", "characters", "charge", "charged", "charger", "chargers", "charges", "charging", "charitable", "charity", "charles", "charleston", "charlie", "charlotte", "charm", "charming", "charms", "chart", "charter", "charts", "chase", "chassis", "chat", "cheap", "cheaper", "cheapest", "cheat", "cheats", "check", "checked", "checking", "checklist", "checkout", "checks", "cheers", "cheese", "chef", "chelsea", "chem", "chemical", "chemicals", "chemistry", "chen", "cheque", "cherry", "chess", "chest", "chester", "chevrolet", "chevy", "chicago", "chick", "chicken", "chicks", "chief", "child", "childhood", "children", "childrens", "chile", "china", "chinese", "chip", "chips", "chocolate", "choice", "choices", "choir", "cholesterol", "choose", "choosing", "chorus", "chose", "chosen", "chris", "christ", "christian", "christianity", "christians", "christina", "christine", "christmas", "christopher", "chrome", "chronic", "chronicle", "chronicles", "chrysler", "chubby", "chuck", "church", "churches", "cialis", "ciao", "cigarette", "cigarettes", "cincinnati", "cindy", "cinema", "cingular", "circle", "circles", "circuit", "circuits", "circular", "circulation", "circumstances", "circus", "cisco", "citation", "citations", "cite", "cited", "cities", "citizen", "citizens", "citizenship", "city", "citysearch", "civic", "civil", "civilian", "civilization", "claim", "claimed", "claims", "claire", "clan", "clara", "clarity", "clark", "clarke", "class", "classes", "classic", "classical", "classics", "classification", "classified", "classifieds", "classroom", "clause", "clay", "clean", "cleaner", "cleaners", "cleaning", "cleanup", "clear", "clearance", "cleared", "clearing", "clearly", "clerk", "cleveland", "click", "clicking", "clicks", "client", "clients", "cliff", "climate", "climb", "climbing", "clinic", "clinical", "clinics", "clinton", "clip", "clips", "clock", "clocks", "clone", "close", "closed", "closely", "closer", "closes", "closest", "closing", "closure", "cloth", "clothes", "clothing", "cloud", "clouds", "cloudy", "club", "clubs", "cluster", "clusters", "cnet", "coach", "coaches", "coaching", "coal", "coalition", "coast", "coastal", "coat", "coated", "coating", "cock", "cocks", "cocktail", "code", "codes", "coding", "coffee", "cognitive", "cohen", "coin", "coins", "cold", "cole", "coleman", "colin", "collaboration", "collaborative", "collapse", "collar", "colleague", "colleagues", "collect", "collectables", "collected", "collectible", "collectibles", "collecting", "collection", "collections", "collective", "collector", "collectors", "college", "colleges", "collins", "cologne", "colombia", "colon", "colonial", "colony", "color", "colorado", "colored", "colors", "columbia", "columbus", "column", "columnists", "columns", "combat", "combination", "combinations", "combine", "combined", "combines", "combining", "combo", "come", "comedy", "comes", "comfort", "comfortable", "comic", "comics", "coming", "comm", "command", "commander", "commands", "comment", "commentary", "commented", "comments", "commerce", "commercial", "commission", "commissioner", "commissioners", "commissions", "commit", "commitment", "commitments", "committed", "committee", "committees", "commodities", "commodity", "common", "commonly", "commons", "commonwealth", "communicate", "communication", "communications", "communist", "communities", "community", "comp", "compact", "companies", "companion", "company", "compaq", "comparable", "comparative", "compare", "compared", "comparing", "comparison", "comparisons", "compatibility", "compatible", "compensation", "compete", "competent", "competing", "competition", "competitions", "competitive", "competitors", "compilation", "compile", "compiled", "compiler", "complaint", "complaints", "complement", "complete", "completed", "completely", "completing", "completion", "complex", "complexity", "compliance", "compliant", "complicated", "complications", "complimentary", "comply", "component", "components", "composed", "composer", "composite", "composition", "compound", "compounds", "comprehensive", "compressed", "compression", "compromise", "computation", "computational", "compute", "computed", "computer", "computers", "computing", "concentrate", "concentration", "concentrations", "concept", "concepts", "conceptual", "concern", "concerned", "concerning", "concerns", "concert", "concerts", "conclude", "concluded", "conclusion", "conclusions", "concord", "concrete", "condition", "conditional", "conditioning", "conditions", "condo", "condos", "conduct", "conducted", "conducting", "conf", "conference", "conferences", "conferencing", "confidence", "confident", "confidential", "confidentiality", "config", "configuration", "configurations", "configure", "configured", "configuring", "confirm", "confirmation", "confirmed", "conflict", "conflicts", "confused", "confusion", "congo", "congratulations", "congress", "congressional", "conjunction", "connect", "connected", "connecticut", "connecting", "connection", "connections", "connectivity", "connector", "connectors", "cons", "conscious", "consciousness", "consecutive", "consensus", "consent", "consequence", "consequences", "consequently", "conservation", "conservative", "consider", "considerable", "consideration", "considerations", "considered", "considering", "considers", "consist", "consistency", "consistent", "consistently", "consisting", "consists", "console", "consoles", "consolidated", "consolidation", "consortium", "conspiracy", "const", "constant", "constantly", "constitute", "constitutes", "constitution", "constitutional", "constraint", "constraints", "construct", "constructed", "construction", "consult", "consultancy", "consultant", "consultants", "consultation", "consulting", "consumer", "consumers", "consumption", "contact", "contacted", "contacting", "contacts", "contain", "contained", "container", "containers", "containing", "contains", "contamination", "contemporary", "content", "contents", "contest", "contests", "context", "continent", "continental", "continually", "continue", "continued", "continues", "continuing", "continuity", "continuous", "continuously", "contract", "contracting", "contractor", "contractors", "contracts", "contrary", "contrast", "contribute", "contributed", "contributing", "contribution", "contributions", "contributor", "contributors", "control", "controlled", "controller", "controllers", "controlling", "controls", "controversial", "controversy", "convenience", "convenient", "convention", "conventional", "conventions", "convergence", "conversation", "conversations", "conversion", "convert", "converted", "converter", "convertible", "convicted", "conviction", "convinced", "cook", "cookbook", "cooked", "cookie", "cookies", "cooking", "cool", "cooler", "cooling", "cooper", "cooperation", "cooperative", "coordinate", "coordinated", "coordinates", "coordination", "coordinator", "cope", "copied", "copies", "copper", "copy", "copying", "copyright", "copyrighted", "copyrights", "coral", "cord", "cordless", "core", "cork", "corn", "cornell", "corner", "corners", "cornwall", "corp", "corporate", "corporation", "corporations", "corps", "corpus", "correct", "corrected", "correction", "corrections", "correctly", "correlation", "correspondence", "corresponding", "corruption", "cosmetic", "cosmetics", "cost", "costa", "costs", "costume", "costumes", "cottage", "cottages", "cotton", "could", "council", "councils", "counsel", "counseling", "count", "counted", "counter", "counters", "counties", "counting", "countries", "country", "counts", "county", "couple", "coupled", "couples", "coupon", "coupons", "courage", "courier", "course", "courses", "court", "courtesy", "courts", "cove", "cover", "coverage", "covered", "covering", "covers", "cowboy", "crack", "cradle", "craft", "crafts", "craig", "crap", "craps", "crash", "crawford", "crazy", "cream", "create", "created", "creates", "creating", "creation", "creations", "creative", "creativity", "creator", "creature", "creatures", "credit", "credits", "creek", "crest", "crew", "cricket", "crime", "crimes", "criminal", "crisis", "criteria", "criterion", "critical", "criticism", "critics", "croatia", "crop", "crops", "cross", "crossing", "crossword", "crowd", "crown", "crucial", "crude", "cruise", "cruises", "cruz", "crystal", "ctrl", "cuba", "cube", "cubic", "cuisine", "cult", "cultural", "culture", "cultures", "cumshot", "cumshots", "cumulative", "cunt", "cups", "cure", "curious", "currencies", "currency", "current", "currently", "curriculum", "cursor", "curtis", "curve", "curves", "custody", "custom", "customer", "customers", "customize", "customized", "customs", "cute", "cuts", "cutting", "cyber", "cycle", "cycles", "cycling", "cylinder", "cyprus", "czech", "daddy", "daily", "dairy", "daisy", "dakota", "dale", "dallas", "damage", "damaged", "damages", "dame", "damn", "dana", "dance", "dancing", "danger", "dangerous", "daniel", "danish", "danny", "dans", "dare", "dark", "darkness", "darwin", "dash", "data", "database", "databases", "date", "dated", "dates", "dating", "daughter", "daughters", "dave", "david", "davidson", "davis", "dawn", "days", "dayton", "dead", "deadline", "deadly", "deaf", "deal", "dealer", "dealers", "dealing", "deals", "dealt", "dealtime", "dean", "dear", "death", "deaths", "debate", "debian", "deborah", "debt", "debug", "debut", "decade", "decades", "december", "decent", "decide", "decided", "decimal", "decision", "decisions", "deck", "declaration", "declare", "declared", "decline", "declined", "decor", "decorating", "decorative", "decrease", "decreased", "dedicated", "deemed", "deep", "deeper", "deeply", "deer", "default", "defeat", "defects", "defence", "defend", "defendant", "defense", "defensive", "deferred", "deficit", "define", "defined", "defines", "defining", "definitely", "definition", "definitions", "degree", "degrees", "delaware", "delay", "delayed", "delays", "delegation", "delete", "deleted", "delhi", "delicious", "delight", "deliver", "delivered", "delivering", "delivers", "delivery", "dell", "delta", "deluxe", "demand", "demanding", "demands", "demo", "democracy", "democrat", "democratic", "democrats", "demographic", "demonstrate", "demonstrated", "demonstrates", "demonstration", "denial", "denied", "denmark", "dennis", "dense", "density", "dental", "dentists", "denver", "deny", "department", "departmental", "departments", "departure", "depend", "dependence", "dependent", "depending", "depends", "deployment", "deposit", "deposits", "depot", "depression", "dept", "depth", "deputy", "derby", "derek", "derived", "descending", "describe", "described", "describes", "describing", "description", "descriptions", "desert", "deserve", "design", "designated", "designation", "designed", "designer", "designers", "designing", "designs", "desirable", "desire", "desired", "desk", "desktop", "desktops", "desperate", "despite", "destination", "destinations", "destiny", "destroy", "destroyed", "destruction", "detail", "detailed", "details", "detect", "detected", "detection", "detective", "detector", "determination", "determine", "determined", "determines", "determining", "detroit", "deutsch", "deutsche", "deutschland", "devel", "develop", "developed", "developer", "developers", "developing", "development", "developmental", "developments", "develops", "deviant", "deviation", "device", "devices", "devil", "devon", "devoted", "diabetes", "diagnosis", "diagnostic", "diagram", "dial", "dialog", "dialogue", "diameter", "diamond", "diamonds", "diana", "diane", "diary", "dice", "dick", "dicke", "dicks", "dictionaries", "dictionary", "died", "diego", "dies", "diesel", "diet", "dietary", "diff", "differ", "difference", "differences", "different", "differential", "differently", "difficult", "difficulties", "difficulty", "diffs", "digest", "digit", "digital", "dildo", "dildos", "dimension", "dimensional", "dimensions", "dining", "dinner", "diploma", "direct", "directed", "direction", "directions", "directive", "directly", "director", "directories", "directors", "directory", "dirt", "dirty", "disabilities", "disability", "disable", "disabled", "disagree", "disappointed", "disaster", "disc", "discharge", "disciplinary", "discipline", "disciplines", "disclaimer", "disclaimers", "disclose", "disclosure", "disco", "discount", "discounted", "discounts", "discover", "discovered", "discovery", "discrete", "discretion", "discrimination", "discs", "discuss", "discussed", "discusses", "discussing", "discussion", "discussions", "disease", "diseases", "dish", "dishes", "disk", "disks", "disney", "disorder", "disorders", "dispatch", "dispatched", "display", "displayed", "displaying", "displays", "disposal", "disposition", "dispute", "disputes", "dist", "distance", "distances", "distant", "distinct", "distinction", "distinguished", "distribute", "distributed", "distribution", "distributions", "distributor", "distributors", "district", "districts", "disturbed", "dive", "diverse", "diversity", "divide", "divided", "dividend", "divine", "diving", "division", "divisions", "divorce", "divx", "dock", "docs", "doctor", "doctors", "doctrine", "document", "documentary", "documentation", "documented", "documents", "dodge", "does", "dogs", "doing", "doll", "dollar", "dollars", "dolls", "domain", "domains", "dome", "domestic", "dominant", "dominican", "donald", "donate", "donated", "donation", "donations", "done", "donna", "donor", "donors", "dont", "doom", "door", "doors", "dosage", "dose", "double", "doubt", "doug", "douglas", "dover", "down", "download", "downloadable", "downloaded", "downloading", "downloads", "downtown", "dozen", "dozens", "draft", "drag", "dragon", "drain", "drainage", "drama", "dramatic", "dramatically", "draw", "drawing", "drawings", "drawn", "draws", "dream", "dreams", "dress", "dressed", "dresses", "dressing", "drew", "dried", "drill", "drilling", "drink", "drinking", "drinks", "drive", "driven", "driver", "drivers", "drives", "driving", "drop", "dropped", "drops", "drove", "drug", "drugs", "drum", "drums", "drunk", "dryer", "dual", "dubai", "dublin", "duck", "dude", "duke", "dumb", "dump", "duncan", "duplicate", "durable", "duration", "durham", "during", "dust", "dutch", "duties", "duty", "dvds", "dying", "dylan", "dynamic", "dynamics", "each", "eagle", "eagles", "earl", "earlier", "earliest", "early", "earn", "earned", "earning", "earnings", "earrings", "ears", "earth", "earthquake", "ease", "easier", "easily", "east", "easter", "eastern", "easy", "eating", "ebay", "ebony", "ebook", "ebooks", "echo", "eclipse", "ecological", "ecology", "ecommerce", "economic", "economics", "economies", "economy", "ecuador", "eddie", "eden", "edgar", "edge", "edges", "edinburgh", "edit", "edited", "editing", "edition", "editions", "editor", "editorial", "editorials", "editors", "edmonton", "educated", "education", "educational", "educators", "edward", "edwards", "effect", "effective", "effectively", "effectiveness", "effects", "efficiency", "efficient", "efficiently", "effort", "efforts", "eggs", "egypt", "egyptian", "eight", "either", "ejaculation", "elder", "elderly", "elect", "elected", "election", "elections", "electoral", "electric", "electrical", "electricity", "electro", "electron", "electronic", "electronics", "elegant", "element", "elementary", "elements", "elephant", "elevation", "eleven", "eligibility", "eligible", "eliminate", "elimination", "elite", "elizabeth", "ellen", "elliott", "ellis", "else", "elsewhere", "elvis", "emacs", "email", "emails", "embassy", "embedded", "emerald", "emergency", "emerging", "emily", "eminem", "emirates", "emission", "emissions", "emma", "emotional", "emotions", "emperor", "emphasis", "empire", "empirical", "employ", "employed", "employee", "employees", "employer", "employers", "employment", "empty", "enable", "enabled", "enables", "enabling", "enclosed", "enclosure", "encoding", "encounter", "encountered", "encourage", "encouraged", "encourages", "encouraging", "encryption", "encyclopedia", "endangered", "ended", "endif", "ending", "endless", "endorsed", "endorsement", "ends", "enemies", "enemy", "energy", "enforcement", "engage", "engaged", "engagement", "engaging", "engine", "engineer", "engineering", "engineers", "engines", "england", "english", "enhance", "enhanced", "enhancement", "enhancements", "enhancing", "enjoy", "enjoyed", "enjoying", "enlarge", "enlargement", "enormous", "enough", "enquiries", "enquiry", "enrolled", "enrollment", "ensemble", "ensure", "ensures", "ensuring", "enter", "entered", "entering", "enterprise", "enterprises", "enters", "entertaining", "entertainment", "entire", "entirely", "entities", "entitled", "entity", "entrance", "entrepreneur", "entrepreneurs", "entries", "entry", "envelope", "environment", "environmental", "environments", "enzyme", "epic", "epinions", "episode", "episodes", "epson", "equal", "equality", "equally", "equation", "equations", "equilibrium", "equipment", "equipped", "equity", "equivalent", "eric", "ericsson", "erik", "erotic", "erotica", "error", "errors", "escape", "escort", "escorts", "especially", "espn", "essay", "essays", "essence", "essential", "essentially", "essentials", "essex", "establish", "established", "establishing", "establishment", "estate", "estates", "estimate", "estimated", "estimates", "estimation", "estonia", "eternal", "ethernet", "ethical", "ethics", "ethiopia", "ethnic", "eugene", "euro", "europe", "european", "euros", "eval", "evaluate", "evaluated", "evaluating", "evaluation", "evaluations", "evanescence", "evans", "even", "evening", "event", "events", "eventually", "ever", "every", "everybody", "everyday", "everyone", "everything", "everywhere", "evidence", "evident", "evil", "evolution", "exact", "exactly", "exam", "examination", "examinations", "examine", "examined", "examines", "examining", "example", "examples", "exams", "exceed", "excel", "excellence", "excellent", "except", "exception", "exceptional", "exceptions", "excerpt", "excess", "excessive", "exchange", "exchanges", "excited", "excitement", "exciting", "exclude", "excluded", "excluding", "exclusion", "exclusive", "exclusively", "excuse", "exec", "execute", "executed", "execution", "executive", "executives", "exempt", "exemption", "exercise", "exercises", "exhaust", "exhibit", "exhibition", "exhibitions", "exhibits", "exist", "existed", "existence", "existing", "exists", "exit", "exotic", "expand", "expanded", "expanding", "expansion", "expansys", "expect", "expectations", "expected", "expects", "expedia", "expenditure", "expenditures", "expense", "expenses", "expensive", "experience", "experienced", "experiences", "experiencing", "experiment", "experimental", "experiments", "expert", "expertise", "experts", "expiration", "expired", "expires", "explain", "explained", "explaining", "explains", "explanation", "explicit", "explicitly", "exploration", "explore", "explorer", "exploring", "explosion", "expo", "export", "exports", "exposed", "exposure", "express", "expressed", "expression", "expressions", "extend", "extended", "extending", "extends", "extension", "extensions", "extensive", "extent", "exterior", "external", "extra", "extract", "extraction", "extraordinary", "extras", "extreme", "extremely", "eyed", "eyes", "fabric", "fabrics", "fabulous", "face", "faced", "faces", "facial", "facilitate", "facilities", "facility", "facing", "fact", "factor", "factors", "factory", "facts", "faculty", "fail", "failed", "failing", "fails", "failure", "failures", "fair", "fairfield", "fairly", "fairy", "faith", "fake", "fall", "fallen", "falling", "falls", "false", "fame", "familiar", "families", "family", "famous", "fancy", "fans", "fantastic", "fantasy", "faqs", "fare", "fares", "farm", "farmer", "farmers", "farming", "farms", "fascinating", "fashion", "fast", "faster", "fastest", "fatal", "fate", "father", "fathers", "fatty", "fault", "favor", "favorite", "favorites", "favors", "fear", "fears", "feat", "feature", "featured", "features", "featuring", "february", "federal", "federation", "feed", "feedback", "feeding", "feeds", "feel", "feeling", "feelings", "feels", "fees", "feet", "fell", "fellow", "fellowship", "felt", "female", "females", "fence", "feof", "ferrari", "ferry", "festival", "festivals", "fetish", "fever", "fewer", "fiber", "fibre", "fiction", "field", "fields", "fifteen", "fifth", "fifty", "fight", "fighter", "fighters", "fighting", "figure", "figured", "figures", "fiji", "file", "filed", "filename", "files", "filing", "fill", "filled", "filling", "film", "filme", "films", "filter", "filtering", "filters", "final", "finally", "finals", "finance", "finances", "financial", "financing", "find", "findarticles", "finder", "finding", "findings", "findlaw", "finds", "fine", "finest", "finger", "fingering", "fingers", "finish", "finished", "finishing", "finite", "finland", "finnish", "fioricet", "fire", "fired", "firefox", "fireplace", "fires", "firewall", "firewire", "firm", "firms", "firmware", "first", "fiscal", "fish", "fisher", "fisheries", "fishing", "fist", "fisting", "fitness", "fits", "fitted", "fitting", "five", "fixed", "fixes", "fixtures", "flag", "flags", "flame", "flash", "flashers", "flashing", "flat", "flavor", "fleece", "fleet", "flesh", "flex", "flexibility", "flexible", "flickr", "flight", "flights", "flip", "float", "floating", "flood", "floor", "flooring", "floors", "floppy", "floral", "florence", "florida", "florist", "florists", "flour", "flow", "flower", "flowers", "flows", "floyd", "fluid", "flush", "flux", "flyer", "flying", "foam", "focal", "focus", "focused", "focuses", "focusing", "fold", "folder", "folders", "folding", "folk", "folks", "follow", "followed", "following", "follows", "font", "fonts", "food", "foods", "fool", "foot", "footage", "football", "footwear", "forbes", "forbidden", "force", "forced", "forces", "ford", "forecast", "forecasts", "foreign", "forest", "forestry", "forests", "forever", "forge", "forget", "forgot", "forgotten", "fork", "form", "formal", "format", "formation", "formats", "formatting", "formed", "former", "formerly", "forming", "forms", "formula", "fort", "forth", "fortune", "forty", "forum", "forums", "forward", "forwarding", "fossil", "foster", "foto", "fotos", "fought", "foul", "found", "foundation", "foundations", "founded", "founder", "fountain", "four", "fourth", "fraction", "fragrance", "fragrances", "frame", "framed", "frames", "framework", "framing", "france", "franchise", "francis", "francisco", "frank", "frankfurt", "franklin", "fraser", "fraud", "fred", "frederick", "free", "freebsd", "freedom", "freelance", "freely", "freeware", "freeze", "freight", "french", "frequencies", "frequency", "frequent", "frequently", "fresh", "friday", "fridge", "friend", "friendly", "friends", "friendship", "frog", "from", "front", "frontier", "frontpage", "frost", "frozen", "fruit", "fruits", "fuck", "fucked", "fucking", "fuel", "fuji", "fujitsu", "full", "fully", "function", "functional", "functionality", "functioning", "functions", "fund", "fundamental", "fundamentals", "funded", "funding", "fundraising", "funds", "funeral", "funk", "funky", "funny", "furnished", "furnishings", "furniture", "further", "furthermore", "fusion", "future", "futures", "fuzzy", "gabriel", "gadgets", "gage", "gain", "gained", "gains", "galaxy", "gale", "galleries", "gallery", "gambling", "game", "gamecube", "games", "gamespot", "gaming", "gamma", "gang", "gangbang", "gaps", "garage", "garbage", "garcia", "garden", "gardening", "gardens", "garlic", "garmin", "gary", "gasoline", "gate", "gates", "gateway", "gather", "gathered", "gathering", "gauge", "gave", "gays", "gazette", "gear", "geek", "gender", "gene", "genealogy", "general", "generally", "generate", "generated", "generates", "generating", "generation", "generations", "generator", "generators", "generic", "generous", "genes", "genesis", "genetic", "genetics", "geneva", "genius", "genome", "genre", "genres", "gentle", "gentleman", "gently", "genuine", "geographic", "geographical", "geography", "geological", "geology", "geometry", "george", "georgia", "gerald", "german", "germany", "gets", "getting", "ghana", "ghost", "giant", "giants", "gibraltar", "gibson", "gift", "gifts", "gilbert", "girl", "girlfriend", "girls", "give", "given", "gives", "giving", "glad", "glance", "glasgow", "glass", "glasses", "glen", "glenn", "global", "globe", "glory", "glossary", "gloves", "glow", "glucose", "gmbh", "gnome", "goal", "goals", "goat", "gods", "goes", "going", "gold", "golden", "golf", "gone", "gonna", "good", "goods", "google", "gordon", "gore", "gorgeous", "gospel", "gossip", "gothic", "goto", "gotta", "gotten", "gourmet", "governance", "governing", "government", "governmental", "governments", "governor", "grab", "grace", "grad", "grade", "grades", "gradually", "graduate", "graduated", "graduates", "graduation", "graham", "grain", "grammar", "grams", "grand", "grande", "granny", "grant", "granted", "grants", "graph", "graphic", "graphical", "graphics", "graphs", "gras", "grass", "grateful", "gratis", "gratuit", "grave", "gravity", "gray", "great", "greater", "greatest", "greatly", "greece", "greek", "green", "greene", "greenhouse", "greensboro", "greeting", "greetings", "greg", "gregory", "grenada", "grew", "grey", "grid", "griffin", "grill", "grip", "grocery", "groove", "gross", "ground", "grounds", "groundwater", "group", "groups", "grove", "grow", "growing", "grown", "grows", "growth", "guam", "guarantee", "guaranteed", "guarantees", "guard", "guardian", "guards", "guatemala", "guess", "guest", "guestbook", "guests", "guidance", "guide", "guided", "guidelines", "guides", "guild", "guilty", "guinea", "guitar", "guitars", "gulf", "guns", "guru", "guyana", "guys", "gzip", "habitat", "habits", "hack", "hacker", "hair", "hairy", "haiti", "half", "halifax", "hall", "halloween", "halo", "hamburg", "hamilton", "hammer", "hampshire", "hampton", "hand", "handbags", "handbook", "handed", "handheld", "handhelds", "handjob", "handjobs", "handle", "handled", "handles", "handling", "handmade", "hands", "handy", "hang", "hanging", "hans", "hansen", "happen", "happened", "happening", "happens", "happiness", "happy", "harassment", "harbor", "hard", "hardcore", "hardcover", "harder", "hardly", "hardware", "hardwood", "harley", "harm", "harmful", "harmony", "harold", "harper", "harris", "harrison", "harry", "hart", "hartford", "harvard", "harvest", "harvey", "hash", "hate", "hats", "have", "haven", "having", "hawaii", "hawaiian", "hawk", "hayes", "hazard", "hazardous", "hazards", "hdtv", "head", "headed", "header", "headers", "heading", "headline", "headlines", "headphones", "headquarters", "heads", "headset", "healing", "health", "healthcare", "healthy", "hear", "heard", "hearing", "hearings", "heart", "hearts", "heat", "heated", "heater", "heath", "heather", "heating", "heaven", "heavily", "heavy", "hebrew", "heel", "height", "heights", "held", "helen", "helena", "helicopter", "hell", "hello", "helmet", "help", "helped", "helpful", "helping", "helps", "hence", "henderson", "henry", "hentai", "hepatitis", "herald", "herb", "herbal", "herbs", "here", "hereby", "herein", "heritage", "hero", "heroes", "herself", "hewlett", "hidden", "hide", "hierarchy", "high", "higher", "highest", "highland", "highlight", "highlighted", "highlights", "highly", "highs", "highway", "highways", "hiking", "hill", "hills", "hilton", "himself", "hindu", "hint", "hints", "hire", "hired", "hiring", "hispanic", "hist", "historic", "historical", "history", "hitachi", "hits", "hitting", "hobbies", "hobby", "hockey", "hold", "holdem", "holder", "holders", "holding", "holdings", "holds", "hole", "holes", "holiday", "holidays", "holland", "hollow", "holly", "hollywood", "holmes", "holocaust", "holy", "home", "homeland", "homeless", "homepage", "homes", "hometown", "homework", "honda", "honduras", "honest", "honey", "hong", "honolulu", "honor", "honors", "hood", "hook", "hope", "hoped", "hopefully", "hopes", "hoping", "hopkins", "horizon", "horizontal", "hormone", "horn", "horny", "horrible", "horror", "horse", "horses", "hose", "hospital", "hospitality", "hospitals", "host", "hosted", "hostel", "hostels", "hosting", "hosts", "hotel", "hotels", "hotmail", "hottest", "hour", "hourly", "hours", "house", "household", "households", "houses", "housewares", "housewives", "housing", "houston", "howard", "however", "howto", "href", "html", "http", "hudson", "huge", "hugh", "hughes", "hugo", "hull", "human", "humanitarian", "humanities", "humanity", "humans", "humidity", "humor", "hundred", "hundreds", "hung", "hungarian", "hungary", "hunger", "hungry", "hunt", "hunter", "hunting", "huntington", "hurricane", "hurt", "husband", "hybrid", "hydraulic", "hydrocodone", "hydrogen", "hygiene", "hypothesis", "hypothetical", "hyundai", "iceland", "icon", "icons", "idaho", "idea", "ideal", "ideas", "identical", "identification", "identified", "identifier", "identifies", "identify", "identifying", "identity", "idle", "idol", "ieee", "ignore", "ignored", "illegal", "illinois", "illness", "illustrated", "illustration", "illustrations", "image", "images", "imagination", "imagine", "imaging", "immediate", "immediately", "immigrants", "immigration", "immune", "immunology", "impact", "impacts", "impaired", "imperial", "implement", "implementation", "implemented", "implementing", "implications", "implied", "implies", "import", "importance", "important", "importantly", "imported", "imports", "impose", "imposed", "impossible", "impressed", "impression", "impressive", "improve", "improved", "improvement", "improvements", "improving", "inappropriate", "inbox", "incentive", "incentives", "incest", "inch", "inches", "incidence", "incident", "incidents", "incl", "include", "included", "includes", "including", "inclusion", "inclusive", "income", "incoming", "incomplete", "incorporate", "incorporated", "incorrect", "increase", "increased", "increases", "increasing", "increasingly", "incredible", "incurred", "indeed", "independence", "independent", "independently", "index", "indexed", "indexes", "india", "indian", "indiana", "indianapolis", "indians", "indicate", "indicated", "indicates", "indicating", "indication", "indicator", "indicators", "indices", "indie", "indigenous", "indirect", "individual", "individually", "individuals", "indonesia", "indonesian", "indoor", "induced", "induction", "industrial", "industries", "industry", "inexpensive", "infant", "infants", "infected", "infection", "infections", "infectious", "infinite", "inflation", "influence", "influenced", "influences", "info", "inform", "informal", "information", "informational", "informative", "informed", "infrared", "infrastructure", "infringement", "ingredients", "inherited", "initial", "initially", "initiated", "initiative", "initiatives", "injection", "injured", "injuries", "injury", "inkjet", "inline", "inner", "innocent", "innovation", "innovations", "innovative", "inns", "input", "inputs", "inquire", "inquiries", "inquiry", "insects", "insert", "inserted", "insertion", "inside", "insider", "insight", "insights", "inspection", "inspections", "inspector", "inspiration", "inspired", "install", "installation", "installations", "installed", "installing", "instance", "instances", "instant", "instantly", "instead", "institute", "institutes", "institution", "institutional", "institutions", "instruction", "instructional", "instructions", "instructor", "instructors", "instrument", "instrumental", "instrumentation", "instruments", "insulation", "insulin", "insurance", "insured", "intake", "integer", "integral", "integrate", "integrated", "integrating", "integration", "integrity", "intel", "intellectual", "intelligence", "intelligent", "intend", "intended", "intense", "intensity", "intensive", "intent", "intention", "inter", "interact", "interaction", "interactions", "interactive", "interest", "interested", "interesting", "interests", "interface", "interfaces", "interference", "interim", "interior", "intermediate", "internal", "international", "internationally", "internet", "internship", "interpretation", "interpreted", "interracial", "intersection", "interstate", "interval", "intervals", "intervention", "interventions", "interview", "interviews", "intimate", "intl", "into", "intranet", "intro", "introduce", "introduced", "introduces", "introducing", "introduction", "introductory", "invalid", "invasion", "invention", "inventory", "invest", "investigate", "investigated", "investigation", "investigations", "investigator", "investigators", "investing", "investment", "investments", "investor", "investors", "invisible", "invision", "invitation", "invitations", "invite", "invited", "invoice", "involve", "involved", "involvement", "involves", "involving", "iowa", "ipaq", "ipod", "iran", "iraq", "iraqi", "ireland", "irish", "iron", "irrigation", "isaac", "isbn", "islam", "islamic", "island", "islands", "isle", "isolated", "isolation", "israel", "israeli", "issn", "issue", "issued", "issues", "istanbul", "italia", "italian", "italiano", "italic", "italy", "item", "items", "itself", "itunes", "ivory", "jack", "jacket", "jackets", "jackie", "jackson", "jacksonville", "jacob", "jade", "jaguar", "jail", "jake", "jamaica", "james", "jamie", "jane", "janet", "january", "japan", "japanese", "jason", "java", "javascript", "jazz", "jean", "jeans", "jeep", "jeff", "jefferson", "jeffrey", "jelsoft", "jennifer", "jenny", "jeremy", "jerry", "jersey", "jerusalem", "jesse", "jessica", "jesus", "jets", "jewel", "jewellery", "jewelry", "jewish", "jews", "jill", "jimmy", "joan", "jobs", "joel", "john", "johnny", "johns", "johnson", "johnston", "join", "joined", "joining", "joins", "joint", "joke", "jokes", "jonathan", "jones", "jordan", "jose", "joseph", "josh", "joshua", "journal", "journalism", "journalist", "journalists", "journals", "journey", "joyce", "jpeg", "juan", "judge", "judges", "judgment", "judicial", "judy", "juice", "julia", "julian", "julie", "july", "jump", "jumping", "junction", "june", "jungle", "junior", "junk", "jurisdiction", "jury", "just", "justice", "justify", "justin", "juvenile", "kansas", "karaoke", "karen", "karl", "karma", "kate", "kathy", "katie", "katrina", "kazakhstan", "keen", "keep", "keeping", "keeps", "keith", "kelkoo", "kelly", "kennedy", "kenneth", "kenny", "keno", "kent", "kentucky", "kenya", "kept", "kernel", "kerry", "kevin", "keyboard", "keyboards", "keys", "keyword", "keywords", "kick", "kidney", "kids", "kijiji", "kill", "killed", "killer", "killing", "kills", "kilometers", "kinase", "kind", "kinda", "kinds", "king", "kingdom", "kings", "kingston", "kirk", "kiss", "kissing", "kitchen", "kits", "kitty", "klein", "knee", "knew", "knife", "knight", "knights", "knit", "knitting", "knives", "knock", "know", "knowing", "knowledge", "knowledgestorm", "known", "knows", "kodak", "kong", "korea", "korean", "kruger", "kurt", "kuwait", "kyle", "label", "labeled", "labels", "labor", "laboratories", "laboratory", "labs", "lace", "lack", "ladder", "laden", "ladies", "lady", "lafayette", "laid", "lake", "lakes", "lamb", "lambda", "lamp", "lamps", "lancaster", "lance", "land", "landing", "lands", "landscape", "landscapes", "lane", "lanes", "lang", "language", "languages", "lanka", "laos", "laptop", "laptops", "large", "largely", "larger", "largest", "larry", "laser", "last", "lasting", "late", "lately", "later", "latest", "latex", "latin", "latina", "latinas", "latino", "latitude", "latter", "latvia", "lauderdale", "laugh", "laughing", "launch", "launched", "launches", "laundry", "laura", "lauren", "lawn", "lawrence", "laws", "lawsuit", "lawyer", "lawyers", "layer", "layers", "layout", "lazy", "lead", "leader", "leaders", "leadership", "leading", "leads", "leaf", "league", "lean", "learn", "learned", "learners", "learning", "lease", "leasing", "least", "leather", "leave", "leaves", "leaving", "lebanon", "lecture", "lectures", "leeds", "left", "legacy", "legal", "legally", "legend", "legendary", "legends", "legislation", "legislative", "legislature", "legitimate", "legs", "leisure", "lemon", "lender", "lenders", "lending", "length", "lens", "lenses", "leon", "leonard", "leone", "lesbian", "lesbians", "leslie", "less", "lesser", "lesson", "lessons", "lets", "letter", "letters", "letting", "level", "levels", "levitra", "levy", "lewis", "lexington", "lexmark", "lexus", "liabilities", "liability", "liable", "liberal", "liberia", "liberty", "librarian", "libraries", "library", "libs", "licence", "license", "licensed", "licenses", "licensing", "licking", "liechtenstein", "lies", "life", "lifestyle", "lifetime", "lift", "light", "lightbox", "lighter", "lighting", "lightning", "lights", "lightweight", "like", "liked", "likelihood", "likely", "likes", "likewise", "lime", "limit", "limitation", "limitations", "limited", "limiting", "limits", "limousines", "lincoln", "linda", "lindsay", "line", "linear", "lined", "lines", "lingerie", "link", "linked", "linking", "links", "linux", "lion", "lions", "lips", "liquid", "lisa", "list", "listed", "listen", "listening", "listing", "listings", "listprice", "lists", "lite", "literacy", "literally", "literary", "literature", "lithuania", "litigation", "little", "live", "livecam", "lived", "liver", "liverpool", "lives", "livesex", "livestock", "living", "lloyd", "load", "loaded", "loading", "loads", "loan", "loans", "lobby", "local", "locale", "locally", "locate", "located", "location", "locations", "locator", "lock", "locked", "locking", "locks", "lodge", "lodging", "logan", "logged", "logging", "logic", "logical", "login", "logistics", "logitech", "logo", "logos", "logs", "lolita", "london", "lone", "lonely", "long", "longer", "longest", "longitude", "look", "looked", "looking", "looks", "looksmart", "lookup", "loop", "loops", "loose", "lopez", "lord", "lose", "losing", "loss", "losses", "lost", "lots", "lottery", "lotus", "loud", "louis", "louise", "louisiana", "louisville", "lounge", "love", "loved", "lovely", "lover", "lovers", "loves", "loving", "lower", "lowest", "lows", "lucas", "lucia", "luck", "lucky", "lucy", "luggage", "luis", "luke", "lunch", "lung", "luther", "luxembourg", "luxury", "lycos", "lying", "lynn", "lyric", "lyrics", "macedonia", "machine", "machinery", "machines", "macintosh", "macro", "macromedia", "madagascar", "made", "madison", "madness", "madonna", "madrid", "magazine", "magazines", "magic", "magical", "magnet", "magnetic", "magnificent", "magnitude", "maiden", "mail", "mailed", "mailing", "mailman", "mails", "mailto", "main", "maine", "mainland", "mainly", "mainstream", "maintain", "maintained", "maintaining", "maintains", "maintenance", "major", "majority", "make", "maker", "makers", "makes", "makeup", "making", "malawi", "malaysia", "maldives", "male", "males", "mali", "mall", "malpractice", "malta", "mambo", "manage", "managed", "management", "manager", "managers", "managing", "manchester", "mandate", "mandatory", "manga", "manhattan", "manitoba", "manner", "manor", "manual", "manually", "manuals", "manufacture", "manufactured", "manufacturer", "manufacturers", "manufacturing", "many", "maple", "mapping", "maps", "marathon", "marble", "marc", "march", "marco", "marcus", "mardi", "margaret", "margin", "maria", "mariah", "marie", "marijuana", "marilyn", "marina", "marine", "mario", "marion", "maritime", "mark", "marked", "marker", "markers", "market", "marketing", "marketplace", "markets", "marking", "marks", "marriage", "married", "marriott", "mars", "marsh", "marshall", "mart", "martha", "martial", "martin", "marvel", "mary", "maryland", "mask", "mason", "mass", "massachusetts", "massage", "massive", "master", "mastercard", "masters", "masturbating", "masturbation", "match", "matched", "matches", "matching", "mate", "material", "materials", "maternity", "math", "mathematical", "mathematics", "mating", "matrix", "mats", "matt", "matter", "matters", "matthew", "mattress", "mature", "maui", "mauritius", "maximize", "maximum", "maybe", "mayor", "mazda", "mcdonald", "meal", "meals", "mean", "meaning", "meaningful", "means", "meant", "meanwhile", "measure", "measured", "measurement", "measurements", "measures", "measuring", "meat", "mechanical", "mechanics", "mechanism", "mechanisms", "medal", "media", "median", "mediawiki", "medicaid", "medical", "medicare", "medication", "medications", "medicine", "medicines", "medieval", "meditation", "mediterranean", "medium", "medline", "meet", "meeting", "meetings", "meets", "meetup", "mega", "melbourne", "melissa", "member", "members", "membership", "membrane", "memo", "memorabilia", "memorial", "memories", "memory", "memphis", "mens", "ment", "mental", "mention", "mentioned", "mentor", "menu", "menus", "mercedes", "merchandise", "merchant", "merchants", "mercury", "mercy", "mere", "merely", "merge", "merger", "merit", "merry", "mesa", "mesh", "mess", "message", "messages", "messaging", "messenger", "meta", "metabolism", "metadata", "metal", "metallic", "metallica", "metals", "meter", "meters", "method", "methodology", "methods", "metres", "metric", "metro", "metropolitan", "mexican", "mexico", "meyer", "miami", "mice", "michael", "michel", "michelle", "michigan", "micro", "microphone", "microsoft", "microwave", "middle", "midi", "midlands", "midnight", "midwest", "might", "mighty", "migration", "mike", "milan", "mild", "mile", "mileage", "miles", "milf", "milfhunter", "milfs", "military", "milk", "mill", "millennium", "miller", "million", "millions", "mills", "milton", "milwaukee", "mime", "mind", "minds", "mine", "mineral", "minerals", "mines", "mini", "miniature", "minimal", "minimize", "minimum", "mining", "minister", "ministers", "ministries", "ministry", "minneapolis", "minnesota", "minolta", "minor", "minority", "mins", "mint", "minus", "minute", "minutes", "miracle", "mirror", "mirrors", "misc", "miscellaneous", "miss", "missed", "missile", "missing", "mission", "missions", "mississippi", "missouri", "mistake", "mistakes", "mistress", "mitchell", "mitsubishi", "mixed", "mixer", "mixing", "mixture", "mobile", "mobiles", "mobility", "mode", "model", "modeling", "modelling", "models", "modem", "modems", "moderate", "moderator", "moderators", "modern", "modes", "modification", "modifications", "modified", "modify", "mods", "modular", "module", "modules", "moisture", "mold", "moldova", "molecular", "molecules", "moment", "moments", "momentum", "moms", "monaco", "monday", "monetary", "money", "mongolia", "monica", "monitor", "monitored", "monitoring", "monitors", "monkey", "mono", "monroe", "monster", "monsters", "montana", "monte", "montgomery", "month", "monthly", "months", "montreal", "mood", "moon", "moore", "moral", "more", "moreover", "morgan", "morning", "morocco", "morris", "morrison", "mortality", "mortgage", "mortgages", "moscow", "moses", "moss", "most", "mostly", "motel", "motels", "mother", "motherboard", "mothers", "motion", "motivated", "motivation", "motor", "motorcycle", "motorcycles", "motorola", "motors", "mount", "mountain", "mountains", "mounted", "mounting", "mounts", "mouse", "mouth", "move", "moved", "movement", "movements", "movers", "moves", "movie", "movies", "moving", "mozambique", "mozilla", "mpeg", "mpegs", "mrna", "msgid", "msgstr", "msie", "much", "multi", "multimedia", "multiple", "mumbai", "munich", "municipal", "municipality", "murder", "murphy", "murray", "muscle", "muscles", "museum", "museums", "music", "musical", "musician", "musicians", "muslim", "muslims", "must", "mustang", "mutual", "muze", "myanmar", "myers", "myrtle", "myself", "mysimon", "myspace", "mysql", "mysterious", "mystery", "myth", "nail", "nails", "naked", "name", "named", "namely", "names", "namespace", "namibia", "nancy", "nano", "naples", "narrative", "narrow", "nasa", "nascar", "nasdaq", "nashville", "nasty", "nathan", "nation", "national", "nationally", "nations", "nationwide", "native", "nato", "natural", "naturally", "naturals", "nature", "naughty", "naval", "navigate", "navigation", "navigator", "navy", "ncaa", "near", "nearby", "nearest", "nearly", "nebraska", "necessarily", "necessary", "necessity", "neck", "necklace", "need", "needed", "needle", "needs", "negative", "negotiation", "negotiations", "neighbor", "neighborhood", "neighbors", "neil", "neither", "nelson", "neon", "nepal", "nerve", "nervous", "nest", "nested", "netherlands", "netscape", "network", "networking", "networks", "neural", "neutral", "nevada", "never", "nevertheless", "newark", "newbie", "newcastle", "newer", "newest", "newfoundland", "newly", "newman", "newport", "news", "newsletter", "newsletters", "newspaper", "newspapers", "newton", "next", "nextel", "niagara", "nicaragua", "nice", "nicholas", "nick", "nickel", "nickname", "nicole", "niger", "nigeria", "night", "nightlife", "nightmare", "nights", "nike", "nikon", "nine", "nintendo", "nipple", "nipples", "nirvana", "nissan", "nitrogen", "noble", "nobody", "node", "nodes", "noise", "nokia", "nominated", "nomination", "nominations", "none", "nonprofit", "noon", "norfolk", "norm", "normal", "normally", "norman", "north", "northeast", "northern", "northwest", "norton", "norway", "norwegian", "nose", "note", "notebook", "notebooks", "noted", "notes", "nothing", "notice", "noticed", "notices", "notification", "notifications", "notified", "notify", "notion", "notre", "nottingham", "nova", "novel", "novels", "novelty", "november", "nowhere", "ntsc", "nuclear", "nude", "nudist", "nudity", "nuke", "null", "number", "numbers", "numeric", "numerical", "numerous", "nurse", "nursery", "nurses", "nursing", "nutrition", "nutritional", "nuts", "nutten", "nvidia", "nylon", "oakland", "oaks", "oasis", "obesity", "obituaries", "object", "objective", "objectives", "objects", "obligation", "obligations", "observation", "observations", "observe", "observed", "observer", "obtain", "obtained", "obtaining", "obvious", "obviously", "occasion", "occasional", "occasionally", "occasions", "occupation", "occupational", "occupations", "occupied", "occur", "occurred", "occurrence", "occurring", "occurs", "ocean", "oclc", "october", "odds", "oecd", "offense", "offensive", "offer", "offered", "offering", "offerings", "offers", "office", "officer", "officers", "offices", "official", "officially", "officials", "offline", "offset", "offshore", "often", "ohio", "oils", "okay", "oklahoma", "older", "oldest", "olive", "oliver", "olympic", "olympics", "olympus", "omaha", "oman", "omega", "omissions", "once", "ones", "ongoing", "onion", "online", "only", "ontario", "onto", "oops", "open", "opened", "opening", "openings", "opens", "opera", "operate", "operated", "operates", "operating", "operation", "operational", "operations", "operator", "operators", "opinion", "opinions", "opponent", "opponents", "opportunities", "opportunity", "opposed", "opposite", "opposition", "optical", "optics", "optimal", "optimization", "optimize", "optimum", "option", "optional", "options", "oracle", "oral", "orange", "orbit", "orchestra", "order", "ordered", "ordering", "orders", "ordinance", "ordinary", "oregon", "organ", "organic", "organisation", "organisations", "organisms", "organization", "organizational", "organizations", "organize", "organized", "organizer", "organizing", "orgasm", "orgy", "oriental", "orientation", "oriented", "origin", "original", "originally", "origins", "orlando", "orleans", "oscar", "other", "others", "otherwise", "ottawa", "ought", "ours", "ourselves", "outcome", "outcomes", "outdoor", "outdoors", "outer", "outlet", "outlets", "outline", "outlined", "outlook", "output", "outputs", "outreach", "outside", "outsourcing", "outstanding", "oval", "oven", "over", "overall", "overcome", "overhead", "overnight", "overseas", "overview", "owen", "owned", "owner", "owners", "ownership", "owns", "oxford", "oxide", "oxygen", "ozone", "pace", "pacific", "pack", "package", "packages", "packaging", "packard", "packed", "packet", "packets", "packing", "packs", "pads", "page", "pages", "paid", "pain", "painful", "paint", "paintball", "painted", "painting", "paintings", "pair", "pairs", "pakistan", "palace", "pale", "palestine", "palestinian", "palm", "palmer", "pamela", "panama", "panasonic", "panel", "panels", "panic", "panties", "pants", "pantyhose", "paper", "paperback", "paperbacks", "papers", "papua", "para", "parade", "paradise", "paragraph", "paragraphs", "paraguay", "parallel", "parameter", "parameters", "parcel", "parent", "parental", "parenting", "parents", "paris", "parish", "park", "parker", "parking", "parks", "parliament", "parliamentary", "part", "partial", "partially", "participant", "participants", "participate", "participated", "participating", "participation", "particle", "particles", "particular", "particularly", "parties", "partition", "partly", "partner", "partners", "partnership", "partnerships", "parts", "party", "paso", "pass", "passage", "passed", "passenger", "passengers", "passes", "passing", "passion", "passive", "passport", "password", "passwords", "past", "pasta", "paste", "pastor", "patch", "patches", "patent", "patents", "path", "pathology", "paths", "patient", "patients", "patio", "patricia", "patrick", "patrol", "pattern", "patterns", "paul", "pavilion", "paxil", "payable", "payday", "paying", "payment", "payments", "paypal", "payroll", "pays", "pdas", "peace", "peaceful", "peak", "pearl", "peas", "pediatric", "peeing", "peer", "peers", "penalties", "penalty", "pencil", "pendant", "pending", "penetration", "penguin", "peninsula", "penis", "penn", "pennsylvania", "penny", "pens", "pension", "pensions", "pentium", "people", "peoples", "pepper", "perceived", "percent", "percentage", "perception", "perfect", "perfectly", "perform", "performance", "performances", "performed", "performer", "performing", "performs", "perfume", "perhaps", "period", "periodic", "periodically", "periods", "peripheral", "peripherals", "perl", "permalink", "permanent", "permission", "permissions", "permit", "permits", "permitted", "perry", "persian", "persistent", "person", "personal", "personality", "personalized", "personally", "personals", "personnel", "persons", "perspective", "perspectives", "perth", "peru", "pest", "pete", "peter", "petersburg", "peterson", "petite", "petition", "petroleum", "pets", "phantom", "pharmaceutical", "pharmaceuticals", "pharmacies", "pharmacology", "pharmacy", "phase", "phases", "phenomenon", "phentermine", "phil", "philadelphia", "philip", "philippines", "philips", "phillips", "philosophy", "phoenix", "phone", "phones", "photo", "photograph", "photographer", "photographers", "photographic", "photographs", "photography", "photos", "photoshop", "phpbb", "phrase", "phrases", "phys", "physical", "physically", "physician", "physicians", "physics", "physiology", "piano", "pichunter", "pick", "picked", "picking", "picks", "pickup", "picnic", "pics", "picture", "pictures", "piece", "pieces", "pierce", "pierre", "pike", "pill", "pillow", "pills", "pilot", "pine", "ping", "pink", "pins", "pioneer", "pipe", "pipeline", "pipes", "pirates", "piss", "pissing", "pitch", "pittsburgh", "pixel", "pixels", "pizza", "place", "placed", "placement", "places", "placing", "plain", "plains", "plaintiff", "plan", "plane", "planes", "planet", "planets", "planned", "planner", "planners", "planning", "plans", "plant", "plants", "plasma", "plastic", "plastics", "plate", "plates", "platform", "platforms", "platinum", "play", "playback", "playboy", "played", "player", "players", "playing", "playlist", "plays", "playstation", "plaza", "pleasant", "please", "pleased", "pleasure", "pledge", "plenty", "plot", "plots", "plug", "plugin", "plugins", "plumbing", "plus", "plymouth", "pmid", "pocket", "pockets", "podcast", "podcasts", "poem", "poems", "poet", "poetry", "point", "pointed", "pointer", "pointing", "points", "poison", "pokemon", "poker", "poland", "polar", "pole", "police", "policies", "policy", "polish", "polished", "political", "politicians", "politics", "poll", "polls", "pollution", "polo", "poly", "polyester", "polymer", "polyphonic", "pond", "pontiac", "pool", "pools", "poor", "pope", "popular", "popularity", "population", "populations", "porcelain", "pork", "porn", "porno", "porsche", "port", "portable", "portal", "porter", "portfolio", "portion", "portions", "portland", "portrait", "portraits", "ports", "portsmouth", "portugal", "portuguese", "pose", "posing", "position", "positioning", "positions", "positive", "possess", "possession", "possibilities", "possibility", "possible", "possibly", "post", "postage", "postal", "postcard", "postcards", "posted", "poster", "posters", "posting", "postings", "postposted", "posts", "potato", "potatoes", "potential", "potentially", "potter", "pottery", "poultry", "pound", "pounds", "pour", "poverty", "powder", "powell", "power", "powered", "powerful", "powerpoint", "powers", "powerseller", "practical", "practice", "practices", "practitioner", "practitioners", "prague", "prairie", "praise", "pray", "prayer", "prayers", "preceding", "precious", "precipitation", "precise", "precisely", "precision", "predict", "predicted", "prediction", "predictions", "prefer", "preference", "preferences", "preferred", "prefers", "prefix", "pregnancy", "pregnant", "preliminary", "premier", "premiere", "premises", "premium", "prep", "prepaid", "preparation", "prepare", "prepared", "preparing", "prerequisite", "prescribed", "prescription", "presence", "present", "presentation", "presentations", "presented", "presenting", "presently", "presents", "preservation", "preserve", "president", "presidential", "press", "pressed", "pressing", "pressure", "preston", "pretty", "prev", "prevent", "preventing", "prevention", "preview", "previews", "previous", "previously", "price", "priced", "prices", "pricing", "pride", "priest", "primarily", "primary", "prime", "prince", "princess", "princeton", "principal", "principle", "principles", "print", "printable", "printed", "printer", "printers", "printing", "prints", "prior", "priorities", "priority", "prison", "prisoner", "prisoners", "privacy", "private", "privilege", "privileges", "prix", "prize", "prizes", "probability", "probably", "probe", "problem", "problems", "proc", "procedure", "procedures", "proceed", "proceeding", "proceedings", "proceeds", "process", "processed", "processes", "processing", "processor", "processors", "procurement", "produce", "produced", "producer", "producers", "produces", "producing", "product", "production", "productions", "productive", "productivity", "products", "profession", "professional", "professionals", "professor", "profile", "profiles", "profit", "profits", "program", "programme", "programmer", "programmers", "programmes", "programming", "programs", "progress", "progressive", "prohibited", "project", "projected", "projection", "projector", "projectors", "projects", "prominent", "promise", "promised", "promises", "promising", "promo", "promote", "promoted", "promotes", "promoting", "promotion", "promotional", "promotions", "prompt", "promptly", "proof", "propecia", "proper", "properly", "properties", "property", "prophet", "proportion", "proposal", "proposals", "propose", "proposed", "proposition", "proprietary", "pros", "prospect", "prospective", "prospects", "prostate", "prostores", "prot", "protect", "protected", "protecting", "protection", "protective", "protein", "proteins", "protest", "protocol", "protocols", "prototype", "proud", "proudly", "prove", "proved", "proven", "provide", "provided", "providence", "provider", "providers", "provides", "providing", "province", "provinces", "provincial", "provision", "provisions", "proxy", "prozac", "psychiatry", "psychological", "psychology", "public", "publication", "publications", "publicity", "publicly", "publish", "published", "publisher", "publishers", "publishing", "pubmed", "pubs", "puerto", "pull", "pulled", "pulling", "pulse", "pump", "pumps", "punch", "punishment", "punk", "pupils", "puppy", "purchase", "purchased", "purchases", "purchasing", "pure", "purple", "purpose", "purposes", "purse", "pursuant", "pursue", "pursuit", "push", "pushed", "pushing", "pussy", "puts", "putting", "puzzle", "puzzles", "python", "qatar", "quad", "qualification", "qualifications", "qualified", "qualify", "qualifying", "qualities", "quality", "quantitative", "quantities", "quantity", "quantum", "quarter", "quarterly", "quarters", "quebec", "queen", "queens", "queensland", "queries", "query", "quest", "question", "questionnaire", "questions", "queue", "quick", "quickly", "quiet", "quilt", "quit", "quite", "quiz", "quizzes", "quotations", "quote", "quoted", "quotes", "rabbit", "race", "races", "rachel", "racial", "racing", "rack", "racks", "radar", "radiation", "radical", "radio", "radios", "radius", "rage", "raid", "rail", "railroad", "railway", "rain", "rainbow", "raise", "raised", "raises", "raising", "raleigh", "rally", "ralph", "ranch", "rand", "random", "randy", "range", "ranger", "rangers", "ranges", "ranging", "rank", "ranked", "ranking", "rankings", "ranks", "rape", "rapid", "rapidly", "rapids", "rare", "rarely", "rate", "rated", "rates", "rather", "rating", "ratings", "ratio", "rational", "ratios", "rats", "raymond", "rays", "reach", "reached", "reaches", "reaching", "reaction", "reactions", "read", "reader", "readers", "readily", "reading", "readings", "reads", "ready", "real", "realistic", "reality", "realize", "realized", "really", "realm", "realtor", "realtors", "realty", "rear", "reason", "reasonable", "reasonably", "reasoning", "reasons", "rebate", "rebates", "rebecca", "rebel", "rebound", "recall", "receipt", "receive", "received", "receiver", "receivers", "receives", "receiving", "recent", "recently", "reception", "receptor", "receptors", "recipe", "recipes", "recipient", "recipients", "recognition", "recognize", "recognized", "recommend", "recommendation", "recommendations", "recommended", "recommends", "reconstruction", "record", "recorded", "recorder", "recorders", "recording", "recordings", "records", "recover", "recovered", "recovery", "recreation", "recreational", "recruiting", "recruitment", "recycling", "redeem", "redhead", "reduce", "reduced", "reduces", "reducing", "reduction", "reductions", "reed", "reef", "reel", "refer", "reference", "referenced", "references", "referral", "referrals", "referred", "referring", "refers", "refinance", "refine", "refined", "reflect", "reflected", "reflection", "reflections", "reflects", "reform", "reforms", "refresh", "refrigerator", "refugees", "refund", "refurbished", "refuse", "refused", "regard", "regarded", "regarding", "regardless", "regards", "reggae", "regime", "region", "regional", "regions", "register", "registered", "registrar", "registration", "registry", "regression", "regular", "regularly", "regulated", "regulation", "regulations", "regulatory", "rehab", "rehabilitation", "reid", "reject", "rejected", "relate", "related", "relates", "relating", "relation", "relations", "relationship", "relationships", "relative", "relatively", "relatives", "relax", "relaxation", "relay", "release", "released", "releases", "relevance", "relevant", "reliability", "reliable", "reliance", "relief", "religion", "religions", "religious", "reload", "relocation", "rely", "relying", "remain", "remainder", "remained", "remaining", "remains", "remark", "remarkable", "remarks", "remedies", "remedy", "remember", "remembered", "remind", "reminder", "remix", "remote", "removable", "removal", "remove", "removed", "removing", "renaissance", "render", "rendered", "rendering", "renew", "renewable", "renewal", "reno", "rent", "rental", "rentals", "repair", "repairs", "repeat", "repeated", "replace", "replaced", "replacement", "replacing", "replica", "replication", "replied", "replies", "reply", "report", "reported", "reporter", "reporters", "reporting", "reports", "repository", "represent", "representation", "representations", "representative", "representatives", "represented", "representing", "represents", "reprint", "reprints", "reproduce", "reproduced", "reproduction", "reproductive", "republic", "republican", "republicans", "reputation", "request", "requested", "requesting", "requests", "require", "required", "requirement", "requirements", "requires", "requiring", "rescue", "research", "researcher", "researchers", "reseller", "reservation", "reservations", "reserve", "reserved", "reserves", "reservoir", "reset", "residence", "resident", "residential", "residents", "resist", "resistance", "resistant", "resolution", "resolutions", "resolve", "resolved", "resort", "resorts", "resource", "resources", "respect", "respected", "respective", "respectively", "respiratory", "respond", "responded", "respondent", "respondents", "responding", "response", "responses", "responsibility", "responsible", "rest", "restaurant", "restaurants", "restoration", "restore", "restored", "restrict", "restricted", "restriction", "restrictions", "restructuring", "result", "resulted", "resulting", "results", "resume", "resumes", "retail", "retailer", "retailers", "retain", "retained", "retention", "retired", "retirement", "retreat", "retrieval", "retrieve", "retrieved", "retro", "return", "returned", "returning", "returns", "reunion", "reuters", "reveal", "revealed", "reveals", "revelation", "revenge", "revenue", "revenues", "reverse", "review", "reviewed", "reviewer", "reviewing", "reviews", "revised", "revision", "revisions", "revolution", "revolutionary", "reward", "rewards", "reynolds", "rhode", "rhythm", "ribbon", "rica", "rice", "rich", "richard", "richards", "richardson", "richmond", "rick", "ricky", "rico", "ride", "rider", "riders", "rides", "ridge", "riding", "right", "rights", "ring", "rings", "ringtone", "ringtones", "ripe", "rise", "rising", "risk", "risks", "river", "rivers", "riverside", "road", "roads", "robbie", "robert", "roberts", "robertson", "robin", "robinson", "robot", "robots", "robust", "rochester", "rock", "rocket", "rocks", "rocky", "roger", "rogers", "roland", "role", "roles", "roll", "rolled", "roller", "rolling", "rolls", "roman", "romance", "romania", "romantic", "rome", "ronald", "roof", "room", "roommate", "roommates", "rooms", "root", "roots", "rope", "rosa", "rose", "roses", "ross", "roster", "rotary", "rotation", "rouge", "rough", "roughly", "roulette", "round", "rounds", "route", "router", "routers", "routes", "routine", "routines", "routing", "rover", "rows", "royal", "royalty", "rubber", "ruby", "rugby", "rugs", "rule", "ruled", "rules", "ruling", "runner", "running", "runs", "runtime", "rural", "rush", "russell", "russia", "russian", "ruth", "rwanda", "ryan", "sacramento", "sacred", "sacrifice", "saddam", "safari", "safe", "safely", "safer", "safety", "sage", "sagem", "said", "sail", "sailing", "saint", "saints", "sake", "salad", "salaries", "salary", "sale", "salem", "sales", "sally", "salmon", "salon", "salt", "salvador", "salvation", "samba", "same", "samoa", "sample", "samples", "sampling", "samsung", "samuel", "sand", "sandra", "sandwich", "sandy", "sans", "santa", "sanyo", "sapphire", "sara", "sarah", "saskatchewan", "satellite", "satin", "satisfaction", "satisfactory", "satisfied", "satisfy", "saturday", "saturn", "sauce", "saudi", "savage", "savannah", "save", "saved", "saver", "saves", "saving", "savings", "saying", "says", "sbjct", "scale", "scales", "scan", "scanned", "scanner", "scanners", "scanning", "scared", "scary", "scenario", "scenarios", "scene", "scenes", "scenic", "schedule", "scheduled", "schedules", "scheduling", "schema", "scheme", "schemes", "scholar", "scholars", "scholarship", "scholarships", "school", "schools", "science", "sciences", "scientific", "scientist", "scientists", "scoop", "scope", "score", "scored", "scores", "scoring", "scotia", "scotland", "scott", "scottish", "scout", "scratch", "screen", "screening", "screens", "screensaver", "screensavers", "screenshot", "screenshots", "screw", "script", "scripting", "scripts", "scroll", "scsi", "scuba", "sculpture", "seafood", "seal", "sealed", "sean", "search", "searched", "searches", "searching", "seas", "season", "seasonal", "seasons", "seat", "seating", "seats", "seattle", "second", "secondary", "seconds", "secret", "secretariat", "secretary", "secrets", "section", "sections", "sector", "sectors", "secure", "secured", "securely", "securities", "security", "seed", "seeds", "seeing", "seek", "seeker", "seekers", "seeking", "seeks", "seem", "seemed", "seems", "seen", "sees", "sega", "segment", "segments", "select", "selected", "selecting", "selection", "selections", "selective", "self", "sell", "seller", "sellers", "selling", "sells", "semester", "semi", "semiconductor", "seminar", "seminars", "senate", "senator", "senators", "send", "sender", "sending", "sends", "senegal", "senior", "seniors", "sense", "sensitive", "sensitivity", "sensor", "sensors", "sent", "sentence", "sentences", "separate", "separated", "separately", "separation", "sept", "september", "sequence", "sequences", "serbia", "serial", "series", "serious", "seriously", "serum", "serve", "served", "server", "servers", "serves", "service", "services", "serving", "session", "sessions", "sets", "setting", "settings", "settle", "settled", "settlement", "setup", "seven", "seventh", "several", "severe", "sewing", "sexcam", "sexo", "sexual", "sexuality", "sexually", "sexy", "shade", "shades", "shadow", "shadows", "shaft", "shake", "shakespeare", "shakira", "shall", "shame", "shanghai", "shannon", "shape", "shaped", "shapes", "share", "shared", "shareholders", "shares", "shareware", "sharing", "shark", "sharon", "sharp", "shaved", "shaw", "shed", "sheep", "sheer", "sheet", "sheets", "sheffield", "shelf", "shell", "shelter", "shemale", "shemales", "shepherd", "sheriff", "sherman", "shield", "shift", "shine", "ship", "shipment", "shipments", "shipped", "shipping", "ships", "shirt", "shirts", "shit", "shock", "shoe", "shoes", "shoot", "shooting", "shop", "shopper", "shoppers", "shopping", "shops", "shopzilla", "shore", "short", "shortcuts", "shorter", "shortly", "shorts", "shot", "shots", "should", "shoulder", "show", "showcase", "showed", "shower", "showers", "showing", "shown", "shows", "showtimes", "shut", "shuttle", "sick", "side", "sides", "siemens", "sierra", "sight", "sigma", "sign", "signal", "signals", "signature", "signatures", "signed", "significance", "significant", "significantly", "signing", "signs", "signup", "silence", "silent", "silicon", "silk", "silly", "silver", "similar", "similarly", "simon", "simple", "simplified", "simply", "simpson", "simpsons", "sims", "simulation", "simulations", "simultaneously", "since", "sing", "singapore", "singer", "singh", "singing", "single", "singles", "sink", "sister", "sisters", "site", "sitemap", "sites", "sitting", "situated", "situation", "situations", "sixth", "size", "sized", "sizes", "skating", "skiing", "skill", "skilled", "skills", "skin", "skins", "skip", "skirt", "skirts", "skype", "slave", "sleep", "sleeping", "sleeps", "sleeve", "slide", "slides", "slideshow", "slight", "slightly", "slim", "slip", "slope", "slot", "slots", "slovak", "slovakia", "slovenia", "slow", "slowly", "slut", "sluts", "small", "smaller", "smallest", "smart", "smell", "smile", "smilies", "smith", "smithsonian", "smoke", "smoking", "smooth", "smtp", "snake", "snap", "snapshot", "snow", "snowboard", "soap", "soccer", "social", "societies", "society", "sociology", "socket", "socks", "sodium", "sofa", "soft", "softball", "software", "soil", "solar", "solaris", "sold", "soldier", "soldiers", "sole", "solely", "solid", "solo", "solomon", "solution", "solutions", "solve", "solved", "solving", "soma", "somalia", "some", "somebody", "somehow", "someone", "somerset", "something", "sometimes", "somewhat", "somewhere", "song", "songs", "sonic", "sons", "sony", "soon", "soonest", "sophisticated", "sorry", "sort", "sorted", "sorts", "sought", "soul", "souls", "sound", "sounds", "soundtrack", "soup", "source", "sources", "south", "southampton", "southeast", "southern", "southwest", "soviet", "space", "spaces", "spain", "spam", "span", "spanish", "spank", "spanking", "sparc", "spare", "spas", "spatial", "speak", "speaker", "speakers", "speaking", "speaks", "spears", "spec", "special", "specialist", "specialists", "specialized", "specializing", "specially", "specials", "specialties", "specialty", "species", "specific", "specifically", "specification", "specifications", "specifics", "specified", "specifies", "specify", "specs", "spectacular", "spectrum", "speech", "speeches", "speed", "speeds", "spell", "spelling", "spencer", "spend", "spending", "spent", "sperm", "sphere", "spice", "spider", "spies", "spin", "spine", "spirit", "spirits", "spiritual", "spirituality", "split", "spoke", "spoken", "spokesman", "sponsor", "sponsored", "sponsors", "sponsorship", "sport", "sporting", "sports", "spot", "spotlight", "spots", "spouse", "spray", "spread", "spreading", "spring", "springer", "springfield", "springs", "sprint", "spyware", "squad", "square", "squirt", "squirting", "stability", "stable", "stack", "stadium", "staff", "staffing", "stage", "stages", "stainless", "stake", "stakeholders", "stamp", "stamps", "stan", "stand", "standard", "standards", "standing", "standings", "stands", "stanford", "stanley", "star", "starring", "stars", "starsmerchant", "start", "started", "starter", "starting", "starts", "startup", "stat", "state", "stated", "statement", "statements", "states", "statewide", "static", "stating", "station", "stationery", "stations", "statistical", "statistics", "stats", "status", "statute", "statutes", "statutory", "stay", "stayed", "staying", "stays", "steady", "steal", "steam", "steel", "steering", "stem", "step", "stephanie", "stephen", "steps", "stereo", "sterling", "steve", "steven", "stevens", "stewart", "stick", "sticker", "stickers", "sticks", "sticky", "still", "stock", "stockholm", "stockings", "stocks", "stolen", "stomach", "stone", "stones", "stood", "stop", "stopped", "stopping", "stops", "storage", "store", "stored", "stores", "stories", "storm", "story", "straight", "strain", "strand", "strange", "stranger", "strap", "strategic", "strategies", "strategy", "stream", "streaming", "streams", "street", "streets", "strength", "strengthen", "strengthening", "strengths", "stress", "stretch", "strict", "strictly", "strike", "strikes", "striking", "string", "strings", "strip", "stripes", "strips", "stroke", "strong", "stronger", "strongly", "struck", "struct", "structural", "structure", "structured", "structures", "struggle", "stuart", "stuck", "stud", "student", "students", "studied", "studies", "studio", "studios", "study", "studying", "stuff", "stuffed", "stunning", "stupid", "style", "styles", "stylish", "stylus", "subaru", "subcommittee", "subdivision", "subject", "subjective", "subjects", "sublime", "submission", "submissions", "submit", "submitted", "submitting", "subscribe", "subscriber", "subscribers", "subscription", "subscriptions", "subsection", "subsequent", "subsequently", "subsidiaries", "subsidiary", "substance", "substances", "substantial", "substantially", "substitute", "subtle", "suburban", "succeed", "success", "successful", "successfully", "such", "suck", "sucking", "sucks", "sudan", "sudden", "suddenly", "suffer", "suffered", "suffering", "sufficient", "sufficiently", "sugar", "suggest", "suggested", "suggesting", "suggestion", "suggestions", "suggests", "suicide", "suit", "suitable", "suite", "suited", "suites", "suits", "sullivan", "summaries", "summary", "summer", "summit", "sunday", "sunglasses", "sunny", "sunrise", "sunset", "sunshine", "super", "superb", "superintendent", "superior", "supervision", "supervisor", "supervisors", "supplement", "supplemental", "supplements", "supplied", "supplier", "suppliers", "supplies", "supply", "support", "supported", "supporters", "supporting", "supports", "suppose", "supposed", "supreme", "sure", "surely", "surf", "surface", "surfaces", "surfing", "surge", "surgeon", "surgeons", "surgery", "surgical", "surname", "surplus", "surprise", "surprised", "surprising", "surrey", "surround", "surrounded", "surrounding", "surveillance", "survey", "surveys", "survival", "survive", "survivor", "survivors", "susan", "suse", "suspect", "suspected", "suspended", "suspension", "sussex", "sustainability", "sustainable", "sustained", "suzuki", "swap", "swaziland", "sweden", "swedish", "sweet", "swift", "swim", "swimming", "swing", "swingers", "swiss", "switch", "switched", "switches", "switching", "switzerland", "sword", "sydney", "symantec", "symbol", "symbols", "sympathy", "symphony", "symposium", "symptoms", "sync", "syndicate", "syndication", "syndrome", "synopsis", "syntax", "synthesis", "synthetic", "syracuse", "syria", "system", "systematic", "systems", "table", "tables", "tablet", "tablets", "tabs", "tackle", "tactics", "tagged", "tags", "tahoe", "tail", "taiwan", "take", "taken", "takes", "taking", "tale", "talent", "talented", "tales", "talk", "talked", "talking", "talks", "tall", "tamil", "tampa", "tank", "tanks", "tanzania", "tape", "tapes", "target", "targeted", "targets", "tariff", "task", "tasks", "taste", "tattoo", "taught", "taxation", "taxes", "taxi", "taylor", "teach", "teacher", "teachers", "teaches", "teaching", "team", "teams", "tear", "tears", "tech", "technical", "technician", "technique", "techniques", "techno", "technological", "technologies", "technology", "techrepublic", "teddy", "teen", "teenage", "teens", "teeth", "telecharger", "telecom", "telephone", "telephony", "telescope", "television", "televisions", "tell", "telling", "tells", "temp", "temperature", "temperatures", "template", "templates", "temple", "temporal", "temporarily", "temporary", "tenant", "tend", "tender", "tennessee", "tennis", "tension", "tent", "term", "terminal", "terminals", "termination", "terminology", "terms", "terrace", "terrain", "terrible", "territories", "territory", "terror", "terrorism", "terrorist", "terrorists", "terry", "test", "testament", "tested", "testimonials", "testimony", "testing", "tests", "texas", "text", "textbook", "textbooks", "textile", "textiles", "texts", "texture", "thai", "thailand", "than", "thank", "thanks", "thanksgiving", "that", "thats", "theater", "theaters", "theatre", "thee", "theft", "thehun", "their", "them", "theme", "themes", "themselves", "then", "theology", "theorem", "theoretical", "theories", "theory", "therapeutic", "therapist", "therapy", "there", "thereafter", "thereby", "therefore", "thereof", "thermal", "thesaurus", "these", "thesis", "theta", "they", "thick", "thickness", "thin", "thing", "things", "think", "thinking", "thinkpad", "thinks", "third", "thirty", "this", "thomas", "thompson", "thomson", "thong", "thongs", "thorough", "thoroughly", "those", "thou", "though", "thought", "thoughts", "thousand", "thousands", "thread", "threaded", "threads", "threat", "threatened", "threatening", "threats", "three", "threesome", "threshold", "thriller", "throat", "through", "throughout", "throw", "throwing", "thrown", "throws", "thru", "thumb", "thumbnail", "thumbnails", "thumbs", "thumbzilla", "thunder", "thursday", "thus", "ticket", "tickets", "tide", "tied", "tier", "ties", "tiffany", "tiger", "tigers", "tight", "tile", "tiles", "till", "timber", "time", "timeline", "timely", "timer", "times", "timing", "timothy", "tiny", "tion", "tions", "tips", "tire", "tired", "tires", "tissue", "titanium", "titans", "title", "titled", "titles", "tits", "titten", "tobacco", "tobago", "today", "todd", "toddler", "together", "toilet", "token", "tokyo", "told", "tolerance", "toll", "tomato", "tomatoes", "tommy", "tomorrow", "tone", "toner", "tones", "tongue", "tonight", "tons", "tony", "took", "tool", "toolbar", "toolbox", "toolkit", "tools", "tooth", "topic", "topics", "topless", "tops", "toronto", "torture", "toshiba", "total", "totally", "totals", "touch", "touched", "tough", "tour", "touring", "tourism", "tourist", "tournament", "tournaments", "tours", "toward", "towards", "tower", "towers", "town", "towns", "township", "toxic", "toyota", "toys", "trace", "track", "trackback", "trackbacks", "tracked", "tracker", "tracking", "tracks", "tract", "tractor", "tracy", "trade", "trademark", "trademarks", "trader", "trades", "trading", "tradition", "traditional", "traditions", "traffic", "tragedy", "trail", "trailer", "trailers", "trails", "train", "trained", "trainer", "trainers", "training", "trains", "tramadol", "trance", "tranny", "trans", "transaction", "transactions", "transcript", "transcription", "transcripts", "transexual", "transexuales", "transfer", "transferred", "transfers", "transform", "transformation", "transit", "transition", "translate", "translated", "translation", "translations", "translator", "transmission", "transmit", "transmitted", "transparency", "transparent", "transport", "transportation", "transsexual", "trap", "trash", "trauma", "travel", "traveler", "travelers", "traveling", "traveller", "travelling", "travels", "travesti", "travis", "tray", "treasure", "treasurer", "treasures", "treasury", "treat", "treated", "treating", "treatment", "treatments", "treaty", "tree", "trees", "trek", "trembl", "tremendous", "trend", "trends", "treo", "trial", "trials", "triangle", "tribal", "tribe", "tribes", "tribunal", "tribune", "tribute", "trick", "tricks", "tried", "tries", "trigger", "trim", "trinidad", "trinity", "trio", "trip", "tripadvisor", "triple", "trips", "triumph", "trivia", "troops", "tropical", "trouble", "troubleshooting", "trout", "troy", "truck", "trucks", "true", "truly", "trunk", "trust", "trusted", "trustee", "trustees", "trusts", "truth", "trying", "tsunami", "tube", "tubes", "tucson", "tuesday", "tuition", "tulsa", "tumor", "tune", "tuner", "tunes", "tuning", "tunisia", "tunnel", "turbo", "turkey", "turkish", "turn", "turned", "turner", "turning", "turns", "turtle", "tutorial", "tutorials", "twelve", "twenty", "twice", "twiki", "twin", "twinks", "twins", "twist", "twisted", "tyler", "type", "types", "typical", "typically", "typing", "uganda", "ugly", "ukraine", "ultimate", "ultimately", "ultra", "ultram", "unable", "unauthorized", "unavailable", "uncertainty", "uncle", "undefined", "under", "undergraduate", "underground", "underlying", "understand", "understanding", "understood", "undertake", "undertaken", "underwear", "undo", "unemployment", "unexpected", "unfortunately", "unified", "uniform", "union", "unions", "uniprotkb", "unique", "unit", "united", "units", "unity", "univ", "universal", "universe", "universities", "university", "unix", "unknown", "unless", "unlike", "unlikely", "unlimited", "unlock", "unnecessary", "unsigned", "unsubscribe", "until", "untitled", "unto", "unusual", "unwrap", "upcoming", "update", "updated", "updates", "updating", "upgrade", "upgrades", "upgrading", "upload", "uploaded", "upon", "upper", "upset", "upskirt", "upskirts", "urban", "urge", "urgent", "urls", "uruguay", "usage", "usda", "used", "useful", "user", "username", "users", "uses", "usgs", "using", "usps", "usual", "usually", "utah", "utilities", "utility", "utilization", "utilize", "utils", "uzbekistan", "vacancies", "vacation", "vacations", "vaccine", "vacuum", "vagina", "valentine", "valid", "validation", "validity", "valium", "valley", "valuable", "valuation", "value", "valued", "values", "valve", "valves", "vampire", "vancouver", "vanilla", "variable", "variables", "variance", "variation", "variations", "varied", "varies", "varieties", "variety", "various", "vary", "varying", "vast", "vatican", "vault", "vbulletin", "vector", "vegas", "vegetable", "vegetables", "vegetarian", "vegetation", "vehicle", "vehicles", "velocity", "velvet", "vendor", "vendors", "venezuela", "venice", "venture", "ventures", "venue", "venues", "verbal", "verde", "verification", "verified", "verify", "verizon", "vermont", "vernon", "verse", "version", "versions", "versus", "vertex", "vertical", "very", "verzeichnis", "vessel", "vessels", "veteran", "veterans", "veterinary", "viagra", "vibrator", "vibrators", "vice", "victim", "victims", "victor", "victoria", "victorian", "victory", "video", "videos", "vids", "vienna", "vietnam", "vietnamese", "view", "viewed", "viewer", "viewers", "viewing", "viewpicture", "views", "viii", "viking", "villa", "village", "villages", "villas", "vincent", "vintage", "vinyl", "violation", "violations", "violence", "violent", "violin", "viral", "virgin", "virginia", "virtual", "virtually", "virtue", "virus", "viruses", "visa", "visibility", "visible", "vision", "visit", "visited", "visiting", "visitor", "visitors", "visits", "vista", "visual", "vital", "vitamin", "vitamins", "vocabulary", "vocal", "vocals", "vocational", "voice", "voices", "void", "voip", "volkswagen", "volleyball", "volt", "voltage", "volume", "volumes", "voluntary", "volunteer", "volunteers", "volvo", "vote", "voted", "voters", "votes", "voting", "voyeur", "voyeurweb", "voyuer", "vsnet", "vulnerability", "vulnerable", "wage", "wages", "wagner", "wagon", "wait", "waiting", "waiver", "wake", "wales", "walk", "walked", "walker", "walking", "walks", "wall", "wallace", "wallet", "wallpaper", "wallpapers", "walls", "walnut", "walt", "walter", "wang", "wanna", "want", "wanted", "wanting", "wants", "warcraft", "ward", "ware", "warehouse", "warm", "warming", "warned", "warner", "warning", "warnings", "warrant", "warranties", "warranty", "warren", "warrior", "warriors", "wars", "wash", "washer", "washing", "washington", "waste", "watch", "watched", "watches", "watching", "water", "waterproof", "waters", "watershed", "watson", "watt", "watts", "wave", "waves", "wayne", "ways", "weak", "wealth", "weapon", "weapons", "wear", "wearing", "weather", "webcam", "webcams", "webcast", "weblog", "weblogs", "webmaster", "webmasters", "webpage", "webshots", "website", "websites", "webster", "wedding", "weddings", "wednesday", "weed", "week", "weekend", "weekends", "weekly", "weeks", "weight", "weighted", "weights", "weird", "welcome", "welding", "welfare", "well", "wellington", "wellness", "wells", "welsh", "wendy", "went", "were", "wesley", "west", "western", "westminster", "whale", "what", "whatever", "whats", "wheat", "wheel", "wheels", "when", "whenever", "where", "whereas", "wherever", "whether", "which", "while", "whilst", "white", "whole", "wholesale", "whom", "whore", "whose", "wichita", "wicked", "wide", "widely", "wider", "widescreen", "widespread", "width", "wife", "wifi", "wiki", "wikipedia", "wild", "wilderness", "wildlife", "wiley", "will", "william", "williams", "willing", "willow", "wilson", "wind", "window", "windows", "winds", "windsor", "wine", "wines", "wing", "wings", "winner", "winners", "winning", "wins", "winston", "winter", "wire", "wired", "wireless", "wires", "wiring", "wisconsin", "wisdom", "wise", "wish", "wishes", "wishing", "wishlist", "witch", "with", "withdrawal", "within", "without", "witness", "witnesses", "wives", "wizard", "wolf", "woman", "women", "womens", "wonder", "wonderful", "wondering", "wood", "wooden", "woods", "wool", "worcester", "word", "wordpress", "words", "work", "worked", "worker", "workers", "workflow", "workforce", "working", "workout", "workplace", "works", "workshop", "workshops", "workstation", "world", "worldcat", "worlds", "worldsex", "worldwide", "worm", "worn", "worried", "worry", "worse", "worship", "worst", "worth", "worthy", "would", "wound", "wrap", "wrapped", "wrapping", "wrestling", "wright", "wrist", "write", "writer", "writers", "writes", "writing", "writings", "written", "wrong", "wrote", "wyoming", "xanax", "xbox", "xerox", "xhtml", "xnxx", "yacht", "yahoo", "yale", "yamaha", "yang", "yard", "yards", "yarn", "yeah", "year", "yearly", "years", "yeast", "yellow", "yemen", "yesterday", "yield", "yields", "yoga", "york", "yorkshire", "young", "younger", "your", "yours", "yourself", "youth", "yugoslavia", "yukon", "zambia", "zdnet", "zealand", "zero", "zimbabwe", "zinc", "zoloft", "zone", "zones", "zoning", "zoom", "zoophilia", "zope", "zshops"];
+  var WORD_SET = new Set(WORDS);
+  var WORDS_BY_LEN = {};
+  for(var wi=0; wi<WORDS.length; wi++){
+    var w = WORDS[wi];
+    if(!WORDS_BY_LEN[w.length]) WORDS_BY_LEN[w.length]=[];
+    WORDS_BY_LEN[w.length].push(w);
+  }
+  var SUBSTRING_SET = new Set();
+  for(var si=0; si<WORDS.length; si++){
+    var sw = WORDS[si];
+    for(var a=0; a<sw.length; a++){
+      for(var b=a+2; b<=sw.length; b++){
+        SUBSTRING_SET.add(sw.slice(a,b));
+      }
+    }
+  }
+
+  var LETTER_POOL = "EEEEEEEEEEEEAAAAAAAAAIIIIIIIIIOOOOOOOONNNNNNRRRRRRTTTTTTLLLLSSSSUUUUDDDDGGGBBCCMMPPFHVWYKJXQZ";
+  function randomWeightedLetter(){ return LETTER_POOL[Math.floor(Math.random()*LETTER_POOL.length)]; }
+  function shuffle(arr){ for(var i=arr.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=arr[i]; arr[i]=arr[j]; arr[j]=t; } return arr; }
+
+  /* ================= board helpers ================= */
+  var SIZE = 7;
+  var MIN_LEN = 4, MAX_LEN = 7;
+  function idx(r,c){ return r*SIZE+c; }
+  function inBounds(r,c){ return r>=0 && r<SIZE && c>=0 && c<SIZE; }
+  var AXES = [[0,1],[1,0],[1,1],[1,-1]];
+
+  function getFilledRun(board,r,c,dr,dc){
+    var cells=[{r:r,c:c}];
+    var rr=r-dr, cc=c-dc;
+    while(inBounds(rr,cc) && board[idx(rr,cc)]){ cells.unshift({r:rr,c:cc}); rr-=dr; cc-=dc; }
+    rr=r+dr; cc=c+dc;
+    while(inBounds(rr,cc) && board[idx(rr,cc)]){ cells.push({r:rr,c:cc}); rr+=dr; cc+=dc; }
+    return cells;
+  }
+
+  function getOpenRun(board,r,c,dr,dc){
+    var cells=[{r:r,c:c}];
+    var rr=r-dr, cc=c-dc;
+    while(inBounds(rr,cc) && board[idx(rr,cc)]){ cells.unshift({r:rr,c:cc}); rr-=dr; cc-=dc; }
+    rr=r+dr; cc=c+dc;
+    while(inBounds(rr,cc) && board[idx(rr,cc)]){ cells.push({r:rr,c:cc}); rr+=dr; cc+=dc; }
+    return cells;
+  }
+
+  // real win check after an actual placement at (r,c)
+  function checkWinAt(board,r,c){
+    for(var a=0;a<AXES.length;a++){
+      var dr=AXES[a][0], dc=AXES[a][1];
+      var run = getFilledRun(board,r,c,dr,dc);
+      if(run.length<MIN_LEN) continue;
+      var letters = run.map(function(p){ return board[idx(p.r,p.c)].letter; });
+      for(var len=MIN_LEN; len<=MAX_LEN && len<=run.length; len++){
+        for(var start=0; start+len<=run.length; start++){
+          var win = letters.slice(start,start+len);
+          var fwd = win.join('').toLowerCase();
+          if(WORD_SET.has(fwd)) return {word:fwd, cells: run.slice(start,start+len)};
+          var bwd = win.slice().reverse().join('').toLowerCase();
+          if(WORD_SET.has(bwd)) return {word:bwd, cells: run.slice(start,start+len).slice().reverse()};
+        }
+      }
+    }
+    return null;
+  }
+
+  function matchPattern(known, blankIdx, len){
+    var list = WORDS_BY_LEN[len] || [];
+    var found = new Set();
+    for(var i=0;i<list.length;i++){
+      var w = list[i], ok=true;
+      for(var k=0;k<len;k++){
+        if(k===blankIdx) continue;
+        if(w[k]!==known[k].toLowerCase()){ ok=false; break; }
+      }
+      if(ok) found.add(w[blankIdx].toUpperCase());
+    }
+    return Array.from(found);
+  }
+
+  // all winning moves currently available on an empty cell (r,c)
+  function findCompletionsAtCell(board,r,c){
+    var results=[];
+    for(var a=0;a<AXES.length;a++){
+      var dr=AXES[a][0], dc=AXES[a][1];
+      var run = getOpenRun(board,r,c,dr,dc);
+      if(run.length<MIN_LEN) continue;
+      var blankPos=-1;
+      for(var i=0;i<run.length;i++){ if(run[i].r===r && run[i].c===c){ blankPos=i; break; } }
+      for(var len=MIN_LEN; len<=MAX_LEN && len<=run.length; len++){
+        for(var start=0; start+len<=run.length; start++){
+          if(blankPos<start || blankPos>=start+len) continue;
+          var windowCells = run.slice(start,start+len);
+          var localBlank = blankPos-start;
+          var known = windowCells.map(function(p){ return (p.r===r&&p.c===c) ? null : board[idx(p.r,p.c)].letter; });
+          var lettersFwd = matchPattern(known, localBlank, len);
+          for(var lf=0; lf<lettersFwd.length; lf++){
+            var arrF = known.slice(); arrF[localBlank]=lettersFwd[lf];
+            results.push({letter:lettersFwd[lf], word:arrF.join(''), cells:windowCells});
+          }
+          var knownRev = known.slice().reverse();
+          var localBlankRev = len-1-localBlank;
+          var lettersRev = matchPattern(knownRev, localBlankRev, len);
+          for(var lr=0; lr<lettersRev.length; lr++){
+            var arrR = knownRev.slice(); arrR[localBlankRev]=lettersRev[lr];
+            results.push({letter:lettersRev[lr], word:arrR.join(''), cells:windowCells.slice().reverse()});
+          }
+        }
+      }
+    }
+    return results;
+  }
+
+  function findAllCompletions(board){
+    var all=[];
+    for(var r=0;r<SIZE;r++){
+      for(var c=0;c<SIZE;c++){
+        if(!board[idx(r,c)]){
+          var res = findCompletionsAtCell(board,r,c);
+          for(var i=0;i<res.length;i++){ all.push({r:r,c:c,letter:res[i].letter,word:res[i].word,cells:res[i].cells}); }
+        }
+      }
+    }
+    return all;
+  }
+
+  function evaluateBuildScore(board,r,c,letter){
+    var savedIdx = idx(r,c);
+    var saved = board[savedIdx];
+    board[savedIdx] = {letter:letter, player:-1};
+    var score=0;
+    for(var a=0;a<AXES.length;a++){
+      var dr=AXES[a][0], dc=AXES[a][1];
+      var run = getFilledRun(board,r,c,dr,dc);
+      if(run.length>=2){
+        var s = run.map(function(p){ return board[idx(p.r,p.c)].letter; }).join('').toLowerCase();
+        if(SUBSTRING_SET.has(s)) score += s.length;
+        var rev = s.split('').reverse().join('');
+        if(rev!==s && SUBSTRING_SET.has(rev)) score += rev.length*0.5;
+      }
+    }
+    board[savedIdx]=saved;
+    return score + Math.random()*0.15;
+  }
+
+  function aiPickBuildMove(board){
+    var candidates=[];
+    for(var r=0;r<SIZE;r++){
+      for(var c=0;c<SIZE;c++){
+        if(board[idx(r,c)]) continue;
+        var adj=false;
+        for(var n=0;n<8;n++){
+          var dr=[0,0,1,-1,1,1,-1,-1][n], dc=[1,-1,0,0,1,-1,1,-1][n];
+          var rr=r+dr, cc=c+dc;
+          if(inBounds(rr,cc) && board[idx(rr,cc)]){ adj=true; break; }
+        }
+        if(adj) candidates.push({r:r,c:c});
+      }
+    }
+    if(candidates.length===0) candidates.push({r:3,c:3});
+    shuffle(candidates);
+    candidates = candidates.slice(0,14);
+    var best=null, bestScore=-1;
+    for(var i=0;i<candidates.length;i++){
+      for(var t=0;t<3;t++){
+        var letter = randomWeightedLetter();
+        var score = evaluateBuildScore(board, candidates[i].r, candidates[i].c, letter);
+        if(score>bestScore){ bestScore=score; best={r:candidates[i].r,c:candidates[i].c,letter:letter}; }
+      }
+    }
+    if(!best) best = {r:candidates[0].r,c:candidates[0].c,letter:randomWeightedLetter()};
+    return best;
+  }
+
+  /* ================= game state ================= */
+  var board, players, turnIdx, mode, selectedLetter, timeLeft, timerHandle, removalTargetPlayer, winInfo, currentConfig;
+  var feathers = 0, todayChallengeCompleted = false;
+
+  /* ---------- persistence (localStorage, best-effort) ---------- */
+  function dateKey(d){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+
+  function persistFeathers(){
+    try{ localStorage.setItem('wb_feathers', String(feathers)); }catch(e){}
+  }
+  function persistRewardClaim(){
+    try{ localStorage.setItem('wb_rewardDate', dateKey(new Date())); }catch(e){}
+  }
+  function persistThemes(){
+    try{
+      localStorage.setItem('wb_unlockedThemes', JSON.stringify(unlockedThemes));
+      localStorage.setItem('wb_currentTheme', currentTheme);
+    }catch(e){}
+  }
+
+  function loadPersisted(){
+    try{
+      var f = localStorage.getItem('wb_feathers');
+      if(f!==null){ var n=parseInt(f,10); if(!isNaN(n)) feathers = n; }
+      var u = localStorage.getItem('wb_unlockedThemes');
+      if(u){ var parsed = JSON.parse(u); if(parsed && typeof parsed==='object') unlockedThemes = parsed; }
+      var t = localStorage.getItem('wb_currentTheme');
+      if(t && THEMES.some(function(th){ return th.id===t; })) currentTheme = t;
+      var claimedDate = localStorage.getItem('wb_rewardDate');
+      todayChallengeCompleted = (claimedDate === dateKey(new Date()));
+    } catch(e){ /* localStorage unavailable (private mode, file:// restrictions, etc.) — continue session-only */ }
+  }
+
+  function updateFeatherUI(){
+    document.getElementById('feather-count').textContent = feathers;
+    renderShop();
+  }
+
+  var DAILY_REWARD = 50;
+
+  function grantRewardIfEligible(isEligible){
+    if(isEligible && !todayChallengeCompleted){
+      feathers += DAILY_REWARD;
+      todayChallengeCompleted = true;
+      updateFeatherUI();
+      persistFeathers();
+      persistRewardClaim();
+      return true;
+    }
+    return false;
+  }
+
+  /* ---------- feather shop: unlockable color themes ---------- */
+  var THEMES = [
+    {id:'default', name:'Classic', cost:0,   p1:'#e8a33d', p2:'#3dc9c9'},
+    {id:'sunset',  name:'Sunset',  cost:100, p1:'#ff8a5c', p2:'#c792ea'},
+    {id:'forest',  name:'Forest',  cost:200, p1:'#b7d968', p2:'#2f9e6d'},
+    {id:'neon',    name:'Neon',    cost:350, p1:'#ff4fd8', p2:'#4bf3ff'}
+  ];
+  var unlockedThemes = {default:true};
+  var currentTheme = 'default';
+
+  function applyTheme(themeId){
+    var classes = document.body.className.split(' ').filter(function(c){ return c.indexOf('theme-')!==0 && c.length; });
+    if(themeId!=='default') classes.push('theme-'+themeId);
+    document.body.className = classes.join(' ');
+    currentTheme = themeId;
+    renderShop();
+    persistThemes();
+  }
+
+  function unlockOrEquipTheme(themeId){
+    var t = THEMES.find(function(x){ return x.id===themeId; });
+    if(!t) return;
+    document.getElementById('shop-msg').textContent='';
+    if(unlockedThemes[themeId]){
+      applyTheme(themeId);
+      return;
+    }
+    if(feathers>=t.cost){
+      feathers -= t.cost;
+      unlockedThemes[themeId]=true;
+      updateFeatherUI();
+      persistFeathers();
+      applyTheme(themeId);
+    } else {
+      document.getElementById('shop-msg').textContent =
+        'Not enough feathers — need '+t.cost+' 🪶, you have '+feathers+'.';
+    }
+  }
+
+  function renderShop(){
+    var row = document.getElementById('shop-row');
+    if(!row) return;
+    row.innerHTML='';
+    THEMES.forEach(function(t){
+      var isUnlocked = !!unlockedThemes[t.id];
+      var isEquipped = currentTheme===t.id;
+      var chip = document.createElement('div');
+      chip.className = 'shop-chip'+(isEquipped?' equipped':'');
+      var label = isEquipped ? 'Equipped' : (isUnlocked ? 'Equip' : ('Unlock '+t.cost+' 🪶'));
+      chip.innerHTML =
+        '<span class="swatch-pair"><span style="background:'+t.p1+'"></span><span style="background:'+t.p2+'"></span></span>'+
+        '<span class="shop-name">'+t.name+'</span>'+
+        '<span class="shop-action">'+label+'</span>';
+      chip.addEventListener('click', function(){ unlockOrEquipTheme(t.id); });
+      row.appendChild(chip);
+    });
+  }
+
+  function newBoard(){ return new Array(SIZE*SIZE).fill(null); }
+
+  function startGame(vsAI, config){
+    config = config || {size:7, minLen:4, maxLen:7, label:null};
+    currentConfig = config;
+    SIZE = config.size;
+    MIN_LEN = config.minLen;
+    MAX_LEN = config.maxLen;
+    board = newBoard();
+    players = vsAI
+      ? [{id:0,name:'You',cls:'p1',isAI:false},{id:1,name:'The Bird',cls:'p2',isAI:true}]
+      : [{id:0,name:'Player 1',cls:'p1',isAI:false},{id:1,name:'Player 2',cls:'p2',isAI:false}];
+    turnIdx = 0;
+    mode='placing';
+    selectedLetter=null;
+    winInfo=null;
+    removalTargetPlayer=null;
+
+    document.getElementById('name-0').textContent = players[0].name;
+    document.getElementById('name-1').textContent = players[1].name;
+    document.getElementById('start-screen').style.display='none';
+    document.getElementById('wordsearch-screen').style.display='none';
+    document.getElementById('airplane-screen').style.display='none';
+    document.getElementById('game-screen').style.display='flex';
+    document.getElementById('win-overlay').style.display='none';
+    document.getElementById('hint-text').textContent =
+      'Words can be read in either direction along a line — ' + MIN_LEN + ' to ' + MAX_LEN + ' letters.';
+    var bannerEl = document.getElementById('mode-banner');
+    if(config.label){ bannerEl.textContent = config.label; bannerEl.style.display='block'; }
+    else { bannerEl.style.display='none'; }
+
+    buildBoardDOM();
+    buildTrayDOM();
+    renderAll();
+    startTurn();
+  }
+
+  function buildBoardDOM(){
+    var el = document.getElementById('board');
+    el.innerHTML='';
+    el.classList.remove('size-7','size-11','size-15');
+    el.classList.add('size-'+SIZE);
+    el.style.gridTemplateColumns = 'repeat('+SIZE+',1fr)';
+    for(var i=0;i<SIZE*SIZE;i++){
+      var cell = document.createElement('div');
+      cell.className='cell empty';
+      cell.dataset.idx=i;
+      cell.addEventListener('click', (function(ii){ return function(){ onCellClick(ii); }; })(i));
+      el.appendChild(cell);
+    }
+  }
+
+  function buildTrayDOM(){
+    var el = document.getElementById('tray');
+    el.innerHTML='';
+    var letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    letters.forEach(function(L){
+      var btn=document.createElement('button');
+      btn.className='letter-btn';
+      btn.textContent=L;
+      btn.addEventListener('click', function(){ onLetterPick(L, btn); });
+      el.appendChild(btn);
+    });
+  }
+
+  function onLetterPick(letter, btnEl){
+    if(mode!=='placing') return;
+    var cur = players[turnIdx];
+    if(cur.isAI) return;
+    var already = selectedLetter===letter;
+    var buttons = document.querySelectorAll('.letter-btn');
+    buttons.forEach(function(b){ b.classList.remove('selected'); });
+    selectedLetter = already ? null : letter;
+    if(selectedLetter) btnEl.classList.add('selected');
+    setStatus(selectedLetter ? ('Placing "'+selectedLetter+'" — tap an empty square.') : 'Pick a letter, then tap a square.');
+  }
+
+  function onCellClick(i){
+    if(mode==='removal'){
+      var cell = board[i];
+      if(cell && cell.player===removalTargetPlayer){
+        board[i]=null;
+        renderBoard();
+        mode='placing';
+        setStatus('Letter removed. Play continues.');
+        advanceTurn();
+      }
+      return;
+    }
+    if(mode!=='placing') return;
+    var cur = players[turnIdx];
+    if(cur.isAI) return;
+    if(board[i]) return;
+    if(!selectedLetter){ setStatus('Pick a letter first, then tap a square.'); return; }
+    doPlace(i, selectedLetter, cur.id);
+  }
+
+  function doPlace(i, letter, playerId){
+    var r=Math.floor(i/SIZE), c=i%SIZE;
+    board[i]={letter:letter, player:playerId};
+    selectedLetter=null;
+    clearInterval(timerHandle);
+    renderBoard();
+
+    var win = checkWinAt(board, r, c);
+    if(win){ endGame(playerId, win); return; }
+    if(board.every(function(x){ return x; })){ endGame(null, null); return; }
+    advanceTurn();
+  }
+
+  function advanceTurn(){
+    turnIdx = 1-turnIdx;
+    startTurn();
+  }
+
+  function startTurn(){
+    timeLeft=10;
+    clearInterval(timerHandle);
+    updateTimerUI();
+    renderAll();
+    var cur = players[turnIdx];
+    setStatus(cur.name + "'s turn — " + (cur.isAI? 'thinking…' : 'pick a letter and place it.'));
+    if(cur.isAI){
+      setTimeout(aiTakeTurn, 550);
+    }
+    timerHandle=setInterval(tick,1000);
+  }
+
+  function tick(){
+    timeLeft--;
+    updateTimerUI();
+    if(timeLeft<=0){
+      clearInterval(timerHandle);
+      handleTimeout();
+    }
+  }
+
+  function handleTimeout(){
+    var timedOut = players[turnIdx];
+    var opponent = players[1-turnIdx];
+    var theirCells=[];
+    for(var i=0;i<board.length;i++){ if(board[i] && board[i].player===timedOut.id) theirCells.push(i); }
+
+    if(theirCells.length===0){
+      setStatus(timedOut.name + ' ran out of time — no letters to remove. Turn passes.', true);
+      advanceTurn();
+      return;
+    }
+
+    if(opponent.isAI){
+      var chosen = aiChooseRemoval(timedOut.id, theirCells);
+      board[chosen]=null;
+      renderBoard();
+      setStatus(timedOut.name + " ran out of time — The Bird plucked a letter!", true);
+      advanceTurn();
+    } else {
+      mode='removal';
+      removalTargetPlayer = timedOut.id;
+      renderBoard();
+      setStatus(timedOut.name + ' ran out of time! ' + opponent.name + ', tap one of their letters to remove it.', true);
+    }
+  }
+
+  function aiChooseRemoval(targetPlayerId, cells){
+    var best=cells[0], bestScore=-1;
+    for(var ci=0; ci<cells.length; ci++){
+      var i = cells[ci];
+      var r=Math.floor(i/SIZE), c=i%SIZE;
+      var score=0;
+      for(var a=0;a<AXES.length;a++){
+        var run = getFilledRun(board,r,c,AXES[a][0],AXES[a][1]);
+        score += run.length;
+      }
+      score += Math.random()*0.1;
+      if(score>bestScore){ bestScore=score; best=i; }
+    }
+    return best;
+  }
+
+  function aiTakeTurn(){
+    if(mode!=='placing') return;
+    var completions = findAllCompletions(board);
+    var move;
+    if(completions.length>0 && Math.random()<0.5){
+      move = completions[Math.floor(Math.random()*completions.length)];
+    } else {
+      move = aiPickBuildMove(board);
+    }
+    var i = idx(move.r, move.c);
+    doPlace(i, move.letter, players[turnIdx].id);
+  }
+
+  function describeWin(win, winnerId){
+    var cells = win.cells;
+    var dr = cells[1].r - cells[0].r;
+    var dc = cells[1].c - cells[0].c;
+    var dirLabel;
+    if(dr===0) dirLabel = 'across, row ' + (cells[0].r+1);
+    else if(dc===0) dirLabel = 'down, column ' + (cells[0].c+1);
+    else if(dr===dc) dirLabel = 'diagonally (↘)';
+    else dirLabel = 'diagonally (↙)';
+
+    var counts = {0:0,1:0};
+    cells.forEach(function(cellPos){
+      var cell = board[idx(cellPos.r,cellPos.c)];
+      if(cell) counts[cell.player] = (counts[cell.player]||0) + 1;
+    });
+
+    var winner = players.find(function(pp){ return pp.id===winnerId; });
+    var other = players.find(function(pp){ return pp.id!==winnerId; });
+    var ownCount = counts[winnerId] || 0;
+    var otherCount = counts[other.id] || 0;
+
+    var lettersNote;
+    if(otherCount>0 && ownCount>0){
+      lettersNote = 'using ' + ownCount + ' of ' + winner.name + "'s own letter" + (ownCount===1?'':'s') +
+        ' and sniping ' + otherCount + ' from ' + other.name + '.';
+    } else if(otherCount>0 && ownCount===0){
+      lettersNote = 'entirely off ' + other.name + "'s letters — a clean snipe!";
+    } else {
+      lettersNote = 'entirely with ' + winner.name + "'s own letters.";
+    }
+
+    return 'Formed "' + win.word.toUpperCase() + '" ' + dirLabel + ', ' + lettersNote;
+  }
+
+  function endGame(playerId, win){
+    mode='gameover';
+    clearInterval(timerHandle);
+    renderAll();
+    var overlay = document.getElementById('win-overlay');
+    if(playerId===null){
+      document.getElementById('overlay-icon').textContent='🪹';
+      document.getElementById('overlay-title').textContent="It's a draw!";
+      document.getElementById('overlay-word').style.display='none';
+      document.getElementById('overlay-sub').textContent='The board filled up with no winning word.';
+    } else {
+      var p = players.find(function(pp){ return pp.id===playerId; });
+      document.getElementById('overlay-icon').textContent = p.isAI ? '🐦' : '🏆';
+      document.getElementById('overlay-title').textContent = p.name + ' wins!';
+      document.getElementById('overlay-word').style.display='inline-block';
+      document.getElementById('overlay-word').textContent = win.word.toUpperCase();
+      var sub = describeWin(win, playerId);
+      if(playerId===0 && currentConfig && currentConfig.rewardEligible){
+        var rewarded = grantRewardIfEligible(true);
+        sub += rewarded ? ' 🪶 +50 Feathers earned!' : ' (Already claimed today\'s reward.)';
+      } else if(playerId===0 && currentConfig && currentConfig.label){
+        sub += ' (Practice mode — no reward, not today\'s challenge.)';
+      }
+      document.getElementById('overlay-sub').textContent = sub;
+      win.cells.forEach(function(cellPos){
+        var el = document.querySelector('.cell[data-idx="'+idx(cellPos.r,cellPos.c)+'"]');
+        if(el) el.classList.add('win-cell');
+      });
+    }
+    overlay.style.display='block';
+  }
+
+  /* ================= render ================= */
+  function setStatus(msg, alert){
+    var el = document.getElementById('status-bar');
+    el.textContent = msg;
+    el.classList.toggle('alert', !!alert);
+  }
+
+  function updateTimerUI(){
+    for(var pIdx=0; pIdx<2; pIdx++){
+      var fill = document.getElementById('timer-'+pIdx);
+      var pct = pIdx===turnIdx ? Math.max(0, (timeLeft/10)*100) : 100;
+      fill.style.width = pct+'%';
+    }
+  }
+
+  function renderBoard(){
+    for(var i=0;i<board.length;i++){
+      var el = document.querySelector('.cell[data-idx="'+i+'"]');
+      if(!el) continue;
+      el.classList.remove('p1','p2','empty','placeable','removable','win-cell');
+      var cell = board[i];
+      if(cell){
+        el.textContent = cell.letter;
+        el.classList.add(cell.player===0 ? 'p1':'p2');
+        if(mode==='removal' && cell.player===removalTargetPlayer){
+          el.classList.add('removable');
+        }
+      } else {
+        el.textContent='';
+        el.classList.add('empty');
+        var cur = players[turnIdx];
+        if(mode==='placing' && !cur.isAI) el.classList.add('placeable');
+      }
+    }
+  }
+
+  function renderAll(){
+    document.getElementById('panel-0').classList.toggle('active', turnIdx===0 && mode!=='gameover');
+    document.getElementById('panel-1').classList.toggle('active', turnIdx===1 && mode!=='gameover');
+    var tray = document.getElementById('tray');
+    var cur = players[turnIdx];
+    tray.classList.toggle('disabled', mode!=='placing' || (cur && cur.isAI));
+    renderBoard();
+  }
+
+  /* ================= word search ================= */
+  var wsSize, wsGrid, wsWords, wsSelStart, wsRewardEligible;
+
+  function generateWordSearchGrid(words, size){
+    var grid = new Array(size*size).fill(null);
+    function gIdx(r,c){ return r*size+c; }
+    var dirs = [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
+    var sortedWords = words.slice().sort(function(a,b){ return b.length-a.length; });
+    sortedWords.forEach(function(word){
+      var placed=false, attempts=0;
+      while(!placed && attempts<400){
+        attempts++;
+        var dir = dirs[Math.floor(Math.random()*dirs.length)];
+        var dr=dir[0], dc=dir[1];
+        var r0=Math.floor(Math.random()*size), c0=Math.floor(Math.random()*size);
+        var r1=r0+dr*(word.length-1), c1=c0+dc*(word.length-1);
+        if(r1<0||r1>=size||c1<0||c1>=size) continue;
+        var ok=true;
+        for(var i=0;i<word.length;i++){
+          var rr=r0+dr*i, cc=c0+dc*i;
+          var existing = grid[gIdx(rr,cc)];
+          if(existing!==null && existing!==word[i]){ ok=false; break; }
+        }
+        if(!ok) continue;
+        for(var i=0;i<word.length;i++){ grid[gIdx(r0+dr*i,c0+dc*i)] = word[i]; }
+        placed=true;
+      }
+      if(!placed){
+        outer:
+        for(var dI=0; dI<dirs.length; dI++){
+          var dr2=dirs[dI][0], dc2=dirs[dI][1];
+          for(var r0b=0;r0b<size;r0b++){
+            for(var c0b=0;c0b<size;c0b++){
+              var r1b=r0b+dr2*(word.length-1), c1b=c0b+dc2*(word.length-1);
+              if(r1b<0||r1b>=size||c1b<0||c1b>=size) continue;
+              var ok2=true;
+              for(var i2=0;i2<word.length;i2++){
+                var rr2=r0b+dr2*i2, cc2=c0b+dc2*i2;
+                var existing2 = grid[gIdx(rr2,cc2)];
+                if(existing2!==null && existing2!==word[i2]){ ok2=false; break; }
+              }
+              if(ok2){
+                for(var i3=0;i3<word.length;i3++){ grid[gIdx(r0b+dr2*i3,c0b+dc2*i3)] = word[i3]; }
+                placed=true;
+                break outer;
+              }
+            }
+          }
+        }
+      }
+    });
+    for(var i=0;i<grid.length;i++){ if(grid[i]===null) grid[i]=randomWeightedLetter(); }
+    return grid;
+  }
+
+  function startWordSearch(words, label, rewardEligible){
+    document.getElementById('start-screen').style.display='none';
+    document.getElementById('game-screen').style.display='none';
+    document.getElementById('airplane-screen').style.display='none';
+    document.getElementById('wordsearch-screen').style.display='flex';
+    wsWords = words.map(function(w){ return {word:w.toUpperCase(), found:false}; });
+    var longest = Math.max.apply(null, wsWords.map(function(w){ return w.word.length; }));
+    wsSize = Math.max(12, longest+2);
+    wsGrid = generateWordSearchGrid(wsWords.map(function(w){ return w.word; }), wsSize);
+    wsSelStart = null;
+    wsRewardEligible = !!rewardEligible;
+    document.getElementById('ws-label').textContent = label || '';
+    buildWordSearchDOM();
+    renderWordSearchWordList();
+    setWsStatus('Tap the first letter of a word, then its last letter.');
+  }
+
+  function buildWordSearchDOM(){
+    var el = document.getElementById('ws-grid');
+    el.innerHTML='';
+    el.style.gridTemplateColumns = 'repeat('+wsSize+',1fr)';
+    for(var i=0;i<wsGrid.length;i++){
+      var cell = document.createElement('div');
+      cell.className='ws-cell';
+      cell.textContent = wsGrid[i];
+      cell.dataset.idx=i;
+      cell.addEventListener('click', (function(ii){ return function(){ onWsCellClick(ii); }; })(i));
+      el.appendChild(cell);
+    }
+  }
+
+  function renderWordSearchWordList(){
+    var el = document.getElementById('ws-words');
+    el.innerHTML='';
+    wsWords.forEach(function(w){
+      var chip=document.createElement('div');
+      chip.className='ws-word'+(w.found?' done':'');
+      chip.textContent=w.word;
+      el.appendChild(chip);
+    });
+  }
+
+  function setWsStatus(msg){ document.getElementById('ws-status').textContent = msg; }
+
+  function onWsCellClick(i){
+    var elClicked = document.querySelector('.ws-cell[data-idx="'+i+'"]');
+    if(wsSelStart===null){
+      wsSelStart=i;
+      elClicked.classList.add('selected');
+      setWsStatus('Now tap the last letter of the word.');
+      return;
+    }
+    if(wsSelStart===i){
+      elClicked.classList.remove('selected');
+      wsSelStart=null;
+      setWsStatus('Tap the first letter of a word, then its last letter.');
+      return;
+    }
+    var r0=Math.floor(wsSelStart/wsSize), c0=wsSelStart%wsSize;
+    var r1=Math.floor(i/wsSize), c1=i%wsSize;
+    var dr=r1-r0, dc=c1-c0;
+    var startEl = document.querySelector('.ws-cell[data-idx="'+wsSelStart+'"]');
+    if(startEl) startEl.classList.remove('selected');
+    var straight = (dr===0 || dc===0 || Math.abs(dr)===Math.abs(dc));
+    wsSelStart=null;
+    if(!straight){ setWsStatus('Selection must be a straight line — try again.'); return; }
+    var steps=Math.max(Math.abs(dr),Math.abs(dc));
+    var sdr = dr===0?0:dr/Math.abs(dr);
+    var sdc = dc===0?0:dc/Math.abs(dc);
+    var cells=[];
+    for(var s=0;s<=steps;s++){ cells.push({r:r0+sdr*s, c:c0+sdc*s}); }
+    var str = cells.map(function(p){ return wsGrid[p.r*wsSize+p.c]; }).join('');
+    var rev = str.split('').reverse().join('');
+    var matchWord = wsWords.find(function(w){ return !w.found && (w.word===str || w.word===rev); });
+    if(matchWord){
+      matchWord.found=true;
+      cells.forEach(function(p){
+        var el = document.querySelector('.ws-cell[data-idx="'+(p.r*wsSize+p.c)+'"]');
+        if(el) el.classList.add('found');
+      });
+      renderWordSearchWordList();
+      if(wsWords.every(function(w){ return w.found; })){
+        var rewarded = grantRewardIfEligible(wsRewardEligible);
+        if(rewarded) setWsStatus('🎉 All words found! 🪶 +50 Feathers earned!');
+        else if(wsRewardEligible) setWsStatus('🎉 All words found! (Already claimed today\'s reward.)');
+        else setWsStatus('🎉 All words found! (Practice mode — no reward, not today\'s challenge.)');
+      } else {
+        setWsStatus('Nice! Found "'+matchWord.word+'". Keep going.');
+      }
+    } else {
+      setWsStatus('No match there — try again.');
+    }
+  }
+
+  /* ================= bird airplane ================= */
+  var airWords, airWordIdx, airProgress, airDone, airInterval, airRewardEligible, airStrikes;
+  var airOriginalWords, airLabelStored;
+  var AIR_LANES = 5;
+  var airPlaneLane, airTiles, airTileIdCounter, airRAF, airLastTime;
+
+  function currentAirWord(){ return airWords[airWordIdx]; }
+  function currentAirNeededLetter(){ return currentAirWord()[airProgress]; }
+
+  function laneTopPercent(lane){ return (10 + lane*(80/(AIR_LANES-1))) + '%'; }
+
+  function startAirplane(words, label, rewardEligible){
+    document.getElementById('start-screen').style.display='none';
+    document.getElementById('game-screen').style.display='none';
+    document.getElementById('wordsearch-screen').style.display='none';
+    document.getElementById('airplane-screen').style.display='flex';
+    airWords = words.map(function(w){ return w.toUpperCase(); });
+    airWordIdx=0; airProgress=0; airDone=false; airStrikes=0;
+    airRewardEligible = !!rewardEligible;
+    airOriginalWords = words.slice();
+    airLabelStored = label;
+    document.getElementById('air-label').textContent = label || '';
+    document.getElementById('air-retry').style.display='none';
+    var area = document.getElementById('air-area');
+    area.innerHTML = '<div class="air-plane" id="air-plane">✈️</div>';
+    airPlaneLane = Math.floor(AIR_LANES/2);
+    airTiles = [];
+    airTileIdCounter = 0;
+    airLastTime = null;
+    updatePlanePosition();
+    clearInterval(airInterval);
+    cancelAnimationFrame(airRAF);
+    renderAirProgress();
+    setAirStatus('Line up your plane with ↑ / ↓, then fire with ←.');
+    airInterval = setInterval(spawnAirTile, 1100);
+    spawnAirTile();
+    airRAF = requestAnimationFrame(airLoop);
+  }
+
+  function updatePlanePosition(){
+    var plane = document.getElementById('air-plane');
+    if(plane) plane.style.top = laneTopPercent(airPlaneLane);
+  }
+
+  function movePlane(delta){
+    if(airDone) return;
+    airPlaneLane = Math.max(0, Math.min(AIR_LANES-1, airPlaneLane+delta));
+    updatePlanePosition();
+  }
+
+  function renderAirProgress(){
+    var word = currentAirWord();
+    var el = document.getElementById('air-progress');
+    el.innerHTML='';
+    if(word){
+      for(var i=0;i<word.length;i++){
+        var span=document.createElement('span');
+        span.className='air-letter'+(i<airProgress?' filled':(i===airProgress?' next':''));
+        span.textContent = i<airProgress ? word[i] : '_';
+        el.appendChild(span);
+      }
+    }
+    var wordsEl = document.getElementById('air-words');
+    wordsEl.innerHTML='';
+    airWords.forEach(function(w, wi){
+      var chip=document.createElement('div');
+      chip.className='ws-word'+(wi<airWordIdx?' done':(wi===airWordIdx?' active':''));
+      chip.textContent=w;
+      wordsEl.appendChild(chip);
+    });
+  }
+
+  function setAirStatus(msg){ document.getElementById('air-status').textContent = msg; }
+
+  function spawnAirTile(){
+    if(airDone) return;
+    var area = document.getElementById('air-area');
+    var needed = currentAirNeededLetter();
+    var letter = Math.random()<0.4 ? needed : randomWeightedLetter();
+    var lane = Math.floor(Math.random()*AIR_LANES);
+    var tileEl = document.createElement('div');
+    tileEl.className='air-tile';
+    tileEl.textContent = letter;
+    tileEl.style.top = laneTopPercent(lane);
+    tileEl.style.left = '-40px';
+    area.appendChild(tileEl);
+    airTiles.push({id:airTileIdCounter++, el:tileEl, letter:letter, lane:lane, x:-40});
+  }
+
+  function airLoop(ts){
+    if(airDone) return;
+    if(airLastTime===null) airLastTime = ts;
+    var dt = (ts - airLastTime)/1000;
+    airLastTime = ts;
+    var area = document.getElementById('air-area');
+    var areaWidth = area.clientWidth || 500;
+    var speed = 55;
+    for(var i=airTiles.length-1; i>=0; i--){
+      var t = airTiles[i];
+      t.x += speed*dt;
+      if(t.x > areaWidth-50){
+        if(t.el.parentNode) t.el.parentNode.removeChild(t.el);
+        airTiles.splice(i,1);
+        continue;
+      }
+      t.el.style.left = t.x+'px';
+    }
+    airRAF = requestAnimationFrame(airLoop);
+  }
+
+  function shootCurrentLane(){
+    if(airDone) return;
+    var candidates = airTiles.filter(function(t){ return t.lane===airPlaneLane; });
+    if(candidates.length===0){
+      setAirStatus('No letter in this lane — move ↑ / ↓ to line up a shot.');
+      return;
+    }
+    candidates.sort(function(a,b){ return b.x-a.x; });
+    var target = candidates[0];
+    airTiles = airTiles.filter(function(t){ return t.id!==target.id; });
+    if(target.el.parentNode) target.el.parentNode.removeChild(target.el);
+    onAirTileShot(target.letter);
+  }
+
+  function onAirTileShot(letter){
+    if(airDone) return;
+    if(letter===currentAirNeededLetter()){
+      airProgress++;
+      if(airProgress>=currentAirWord().length){
+        airWordIdx++;
+        airProgress=0;
+        if(airWordIdx>=airWords.length){
+          finishAirplane();
+          return;
+        } else {
+          setAirStatus('Word complete! Next: '+currentAirWord());
+        }
+      } else {
+        setAirStatus('Hit! Keep going.');
+      }
+      renderAirProgress();
+    } else {
+      airStrikes++;
+      if(airStrikes>=3){
+        loseAirplane();
+        return;
+      }
+      setAirStatus('That wasn\'t the next letter — keep shooting for "'+currentAirNeededLetter()+'". Strike '+airStrikes+'/3.');
+    }
+  }
+
+  function loseAirplane(){
+    airDone=true;
+    clearInterval(airInterval);
+    cancelAnimationFrame(airRAF);
+    airTiles.forEach(function(t){ if(t.el.parentNode) t.el.parentNode.removeChild(t.el); });
+    airTiles=[];
+    setAirStatus('💀 3 wrong shots — try again!');
+    document.getElementById('air-retry').style.display='inline-block';
+  }
+
+  function finishAirplane(){
+    airDone=true;
+    clearInterval(airInterval);
+    cancelAnimationFrame(airRAF);
+    airTiles.forEach(function(t){ if(t.el.parentNode) t.el.parentNode.removeChild(t.el); });
+    airTiles=[];
+    renderAirProgress();
+    var rewarded = grantRewardIfEligible(airRewardEligible);
+    if(rewarded) setAirStatus('🎉 All words shot down! 🪶 +50 Feathers earned!');
+    else if(airRewardEligible) setAirStatus('🎉 All words shot down! (Already claimed today\'s reward.)');
+    else setAirStatus('🎉 All words shot down! (Practice mode — no reward, not today\'s challenge.)');
+  }
+
+  /* ================= party (Sunday) ================= */
+  var partyFries, partyStrikes, partyRemainingReal, partyLabel, partyRewardEligible;
+
+  function pickCandidateWords(count, minLen, maxLen){
+    var pool = WORDS.filter(function(w){ return w.length>=minLen && w.length<=maxLen; });
+    shuffle(pool);
+    return pool.slice(0, count);
+  }
+
+  function corruptWord(word){
+    var attempts=0;
+    while(attempts<20){
+      attempts++;
+      var w = word.split('');
+      var strategy = Math.floor(Math.random()*3);
+      if(strategy===0 && w.length>=3){
+        var i = Math.floor(Math.random()*(w.length-1));
+        var tmp=w[i]; w[i]=w[i+1]; w[i+1]=tmp;
+      } else if(strategy===1 && w.length>4){
+        var i2 = Math.floor(Math.random()*w.length);
+        w.splice(i2,1);
+      } else {
+        var i3 = Math.floor(Math.random()*w.length);
+        var letters='abcdefghijklmnopqrstuvwxyz';
+        var newLetter;
+        do{ newLetter = letters[Math.floor(Math.random()*letters.length)]; } while(newLetter===w[i3]);
+        w[i3]=newLetter;
+      }
+      var result = w.join('');
+      if(result!==word && !WORD_SET.has(result)) return result;
+    }
+    return word.length>=2 ? (word[1]+word[0]+word.slice(2)) : (word+'x');
+  }
+
+  function startParty(label, rewardEligible){
+    document.getElementById('start-screen').style.display='none';
+    document.getElementById('game-screen').style.display='none';
+    document.getElementById('wordsearch-screen').style.display='none';
+    document.getElementById('airplane-screen').style.display='none';
+    document.getElementById('party-screen').style.display='flex';
+    partyLabel = label;
+    partyRewardEligible = !!rewardEligible;
+    document.getElementById('party-label').textContent = label || '';
+    document.getElementById('party-retry').style.display='none';
+
+    var pool = pickCandidateWords(16, 4, 9);
+    var realWords = pool.slice(0,8).map(function(w){ return w.toUpperCase(); });
+    var fakeSource = pool.slice(8,16);
+    var fakeWords = fakeSource.map(function(w){ return corruptWord(w).toUpperCase(); });
+
+    partyFries = realWords.map(function(w){ return {word:w, real:true, eaten:false}; })
+      .concat(fakeWords.map(function(w){ return {word:w, real:false, eaten:false}; }));
+    shuffle(partyFries);
+    partyStrikes = 0;
+    partyRemainingReal = realWords.length;
+    renderPartyBowl();
+    setPartyStatus('Eat only the fries with real words! ('+partyRemainingReal+' left)');
+  }
+
+  function renderPartyBowl(){
+    var el = document.getElementById('party-bowl');
+    el.innerHTML='';
+    partyFries.forEach(function(fry, i){
+      if(fry.eaten) return;
+      var div = document.createElement('div');
+      div.className='fry';
+      div.textContent = fry.word;
+      div.style.transform = 'rotate('+(Math.random()*30-15).toFixed(1)+'deg)';
+      div.dataset.idx = i;
+      div.addEventListener('click', function(){ onFryClick(i); });
+      el.appendChild(div);
+    });
+  }
+
+  function setPartyStatus(msg){ document.getElementById('party-status').textContent = msg; }
+
+  function onFryClick(i){
+    var fry = partyFries[i];
+    if(!fry || fry.eaten) return;
+    fry.eaten = true;
+    var el = document.querySelector('.fry[data-idx="'+i+'"]');
+    if(fry.real){
+      if(el) el.classList.add('eaten-good');
+      partyRemainingReal--;
+      setPartyStatus('Yum! "'+fry.word+'" was real. ('+Math.max(partyRemainingReal,0)+' left)');
+    } else {
+      partyStrikes++;
+      if(el) el.classList.add('eaten-bad');
+      setPartyStatus('Yuck! "'+fry.word+'" isn\'t a word. Strike '+partyStrikes+'/3.');
+    }
+    setTimeout(function(){ renderPartyBowl(); checkPartyEnd(); }, 220);
+  }
+
+  function checkPartyEnd(){
+    if(partyStrikes>=3){
+      setPartyStatus('💀 Too many bad fries! Tap "Try again" to reset the bowl.');
+      document.getElementById('party-retry').style.display='inline-block';
+      return;
+    }
+    if(partyRemainingReal<=0){
+      var rewarded = grantRewardIfEligible(partyRewardEligible);
+      if(rewarded) setPartyStatus('🎉 Bowl cleared! 🪶 +50 Feathers earned!');
+      else if(partyRewardEligible) setPartyStatus('🎉 Bowl cleared! (Already claimed today\'s reward.)');
+      else setPartyStatus('🎉 Bowl cleared! (Practice mode — no reward, not today\'s challenge.)');
+      document.getElementById('party-retry').style.display='none';
+    }
+  }
+
+  /* ================= gravity's bird (Friday) ================= */
+  var GB_TARGET_COLS = [1,3,5,7,9,11];
+  var GB_TARGET_ROW = 9;
+  var GB_TIER1_ROW = 3;
+  var GB_TIER2_ROW = 6;
+  var GB_TICK_MS = 220;
+  var GB_JUMP_HEIGHT = 3;
+  var GB_CRUMBLE_MS = 2000;
+
+  var gbWord, gbFilled, gbQueue, gbQueueIndex, gbActive, gbDone, gbRewardEligible, gbLabelStored;
+  var gbStrikes, gbTier1, gbTier2, gbTargetSpikes, gbFloorSpikes, gbTickHandle;
+
+  function randomWordOfLength(len){
+    var list = WORDS_BY_LEN[len] || [];
+    return list[Math.floor(Math.random()*list.length)].toUpperCase();
+  }
+
+  function nonTargetCols(){
+    var out=[];
+    for(var c=0;c<12;c++){ if(GB_TARGET_COLS.indexOf(c)===-1) out.push(c); }
+    return out;
+  }
+
+  function generateTier(){
+    var pool = shuffle(nonTargetCols());
+    var extra = pool.slice(0,2);
+    var gaps = pool.slice(2);
+    var spikes = gaps.slice(0,2);
+    return {
+      supported: GB_TARGET_COLS.concat(extra),
+      falling: extra.slice(),
+      spikes: spikes,
+      crumbled: {}
+    };
+  }
+
+  function generateTargetSpikes(){
+    var pool = shuffle(nonTargetCols());
+    return pool.slice(0,3);
+  }
+
+  function generateFloorSpikes(){
+    var candidates = GB_TARGET_COLS.filter(function(c){ return c!==5; }); // goal columns only, excluding spawn column
+    shuffle(candidates);
+    return candidates.slice(0,4);
+  }
+
+  function startGravity(label, rewardEligible){
+    document.getElementById('start-screen').style.display='none';
+    document.getElementById('game-screen').style.display='none';
+    document.getElementById('wordsearch-screen').style.display='none';
+    document.getElementById('airplane-screen').style.display='none';
+    document.getElementById('party-screen').style.display='none';
+    document.getElementById('gravity-screen').style.display='flex';
+    gbWord = randomWordOfLength(6);
+    gbFilled = new Array(6).fill(null);
+    gbQueue = shuffle(gbWord.split(''));
+    gbQueueIndex = 0;
+    gbActive = null;
+    gbDone = false;
+    gbStrikes = 0;
+    gbRewardEligible = !!rewardEligible;
+    gbLabelStored = label;
+    gbTier1 = generateTier();
+    gbTier2 = generateTier();
+    gbTargetSpikes = generateTargetSpikes();
+    gbFloorSpikes = generateFloorSpikes();
+    document.getElementById('gb-label').textContent = label || '';
+    document.getElementById('gb-retry').style.display='none';
+    document.getElementById('gb-goal').innerHTML = 'Spell: <b>'+gbWord+'</b>';
+    renderGravityProgress();
+    renderGravityBoard();
+    setGbStatus('Press ↓ to bring in a letter. Climb 3 tiers of platforms to reach row 9 — steer mid-air with ← →!');
+    clearInterval(gbTickHandle);
+    gbTickHandle = setInterval(gbTick, GB_TICK_MS);
+  }
+
+  function renderGravityProgress(){
+    var el = document.getElementById('gb-progress');
+    el.innerHTML='';
+    gbWord.split('').forEach(function(ch,i){
+      var span=document.createElement('span');
+      span.className='air-letter'+(gbFilled[i]?' filled':'');
+      span.textContent = gbFilled[i] ? ch : '_';
+      el.appendChild(span);
+    });
+  }
+
+  function setGbStatus(msg){ document.getElementById('gb-status').textContent = msg; }
+
+  // classify a board cell: 'support' | 'spike' | 'empty'
+  function classifyCell(row,col){
+    if(row===0){
+      return (gbFloorSpikes.indexOf(col)!==-1) ? 'spike' : 'support';
+    }
+    if(row===GB_TIER1_ROW){
+      if(gbTier1.spikes.indexOf(col)!==-1) return 'spike';
+      if(gbTier1.supported.indexOf(col)!==-1 && !gbTier1.crumbled[col]) return 'support';
+      return 'empty';
+    }
+    if(row===GB_TIER2_ROW){
+      if(gbTier2.spikes.indexOf(col)!==-1) return 'spike';
+      if(gbTier2.supported.indexOf(col)!==-1 && !gbTier2.crumbled[col]) return 'support';
+      return 'empty';
+    }
+    if(row===GB_TARGET_ROW){
+      if(GB_TARGET_COLS.indexOf(col)!==-1) return 'support';
+      if(gbTargetSpikes.indexOf(col)!==-1) return 'spike';
+      return 'empty';
+    }
+    return 'empty';
+  }
+
+  function isFallingTile(row,col){
+    if(row===GB_TIER1_ROW) return gbTier1.falling.indexOf(col)!==-1 && !gbTier1.crumbled[col];
+    if(row===GB_TIER2_ROW) return gbTier2.falling.indexOf(col)!==-1 && !gbTier2.crumbled[col];
+    return false;
+  }
+
+  function renderGravityBoard(){
+    var el = document.getElementById('gb-board');
+    el.innerHTML='';
+    for(var row=11; row>=0; row--){
+      for(var col=0; col<12; col++){
+        var cell = document.createElement('div');
+        cell.className='gb-cell';
+        var cls = classifyCell(row,col);
+        if(row===GB_TARGET_ROW && GB_TARGET_COLS.indexOf(col)!==-1){
+          var tIdx = GB_TARGET_COLS.indexOf(col);
+          if(gbFilled[tIdx]){
+            cell.className+=' gb-target-filled';
+            cell.textContent = gbFilled[tIdx];
+          } else {
+            cell.className+=' gb-target';
+          }
+        } else if(row===GB_TARGET_ROW-1 && GB_TARGET_COLS.indexOf(col)!==-1){
+          cell.className+=' gb-platform';
+        } else if(cls==='spike'){
+          cell.className+=' gb-spike';
+          cell.textContent='▲';
+        } else if(cls==='support'){
+          cell.className+=' gb-platform'+(isFallingTile(row,col)?' gb-platform-falling':'');
+        }
+        if(gbActive && gbActive.row===row && gbActive.col===col){
+          cell.className+=' gb-active';
+          cell.textContent = gbActive.letter;
+        }
+        el.appendChild(cell);
+      }
+    }
+  }
+
+  function gbSpawnNext(){
+    if(gbDone || gbActive) return;
+    if(gbQueueIndex>=gbQueue.length) return;
+    var letter = gbQueue[gbQueueIndex++];
+    gbActive = {row:0, col:5, letter:letter, state:'grounded', landedAt:Date.now(), crumbleDeadline:null};
+    renderGravityBoard();
+    setGbStatus('Letter "'+letter+'" is in — line it up and press ↑ to jump.');
+  }
+
+  function gbMove(delta){
+    if(gbDone || !gbActive) return;
+    var a = gbActive;
+    a.col = Math.max(0, Math.min(11, a.col+delta));
+    if(a.state==='grounded'){
+      var cls = classifyCell(a.row,a.col);
+      if(cls==='spike'){ gbHitSpike(); return; }
+      if(cls==='support'){
+        a.landedAt=Date.now();
+        markCrumbleTimer(a);
+      } else {
+        a.state='falling';
+        a.crumbleDeadline=null;
+      }
+    }
+    renderGravityBoard();
+  }
+
+  function gbJump(){
+    if(gbDone || !gbActive || gbActive.state!=='grounded') return;
+    gbActive.jumpPeak = gbActive.row + GB_JUMP_HEIGHT;
+    gbActive.state = 'rising';
+    gbActive.crumbleDeadline = null;
+    setGbStatus('Jumping! Steer with ← → while airborne to line up faster.');
+    renderGravityBoard();
+  }
+
+  function markCrumbleTimer(a){
+    if(isFallingTile(a.row,a.col)){
+      a.crumbleDeadline = Date.now()+GB_CRUMBLE_MS;
+      a.crumbleTier = (a.row===GB_TIER1_ROW) ? gbTier1 : gbTier2;
+      a.crumbleCol = a.col;
+    } else {
+      a.crumbleDeadline = null;
+    }
+  }
+
+  function handleTargetLanding(a){
+    var targetIdx = GB_TARGET_COLS.indexOf(a.col);
+    if(gbFilled[targetIdx]) return false; // occupied, pass through
+    var needed = gbWord[targetIdx];
+    if(a.letter===needed){
+      gbFilled[targetIdx]=needed;
+      gbActive=null;
+      renderGravityProgress();
+      if(gbFilled.every(function(x){ return x; })){
+        finishGravity();
+      } else {
+        setGbStatus('Locked in! Press ↓ to bring in the next letter.');
+      }
+      return true;
+    }
+    return false; // wrong letter, pass through
+  }
+
+  function checkHazardOrLand(a){
+    var cls = classifyCell(a.row,a.col);
+    if(cls==='spike'){ gbHitSpike(); return true; }
+    if(cls==='support'){
+      if(a.row===GB_TARGET_ROW && GB_TARGET_COLS.indexOf(a.col)!==-1){
+        return handleTargetLanding(a);
+      }
+      a.state='grounded';
+      a.landedAt=Date.now();
+      markCrumbleTimer(a);
+      return true;
+    }
+    return false;
+  }
+
+  function gbTick(){
+    if(gbDone || !gbActive) return;
+    var a = gbActive;
+    var changed = false;
+
+    if(a.state==='grounded' && a.crumbleDeadline && Date.now()>=a.crumbleDeadline){
+      a.crumbleTier.crumbled[a.crumbleCol]=true;
+      a.crumbleDeadline=null;
+      a.state='falling';
+      setGbStatus('💥 That platform crumbled beneath the letter!');
+      changed=true;
+    }
+
+    if(a.state==='rising'){
+      a.row++;
+      changed=true;
+      if(!checkHazardOrLand(a)){
+        if(gbActive && a.row>=a.jumpPeak){ a.state='falling'; }
+      }
+    } else if(a.state==='falling'){
+      if(a.row>0){
+        a.row--;
+        changed=true;
+        checkHazardOrLand(a);
+      } else {
+        a.row=0; a.state='grounded'; a.landedAt=Date.now(); markCrumbleTimer(a); changed=true;
+      }
+    }
+
+    if(changed) renderGravityBoard();
+  }
+
+  function gbHitSpike(){
+    gbQueue.push(gbActive.letter);
+    gbActive=null;
+    gbStrikes++;
+    renderGravityBoard();
+    if(gbStrikes>=3){
+      loseGravity();
+      return;
+    }
+    setGbStatus('💥 Ouch, spikes! That letter fell back into the queue. Strike '+gbStrikes+'/3.');
+  }
+
+  function loseGravity(){
+    gbDone=true;
+    clearInterval(gbTickHandle);
+    setGbStatus('💀 3 spike hits — try again!');
+    document.getElementById('gb-retry').style.display='inline-block';
+  }
+
+  function finishGravity(){
+    gbDone=true;
+    clearInterval(gbTickHandle);
+    renderGravityBoard();
+    var rewarded = grantRewardIfEligible(gbRewardEligible);
+    if(rewarded) setGbStatus('🎉 "'+gbWord+'" complete! 🪶 +50 Feathers earned!');
+    else if(gbRewardEligible) setGbStatus('🎉 "'+gbWord+'" complete! (Already claimed today\'s reward.)');
+    else setGbStatus('🎉 "'+gbWord+'" complete! (Practice mode — no reward, not today\'s challenge.)');
+  }
+
+
+  /* ================= maze chase (Saturday) ================= */
+  var MAZE_SIZE = 13;
+  var MC_TICK_MS = 450;
+  var mcGrid, mcPlayer, mcEnemies, mcLetters, mcWord, mcFilled, mcDone, mcStrikes;
+  var mcRewardEligible, mcLabelStored, mcTickHandle, mcHeavyPickups, mcHeavyExpiresAt, mcBlocks;
+  var HEAVY_ICON = '\uD83D\uDCAA';
+  var MC_HEAVY_DURATION_MS = 5000;
+
+  function generateMaze(n){
+    var grid = [];
+    for(var r=0;r<n;r++) grid.push(new Array(n).fill(true)); // true = wall
+    var stack = [[1,1]];
+    grid[1][1]=false;
+    while(stack.length){
+      var cur = stack[stack.length-1];
+      var r=cur[0], c=cur[1];
+      var dirs = shuffle([[0,2],[0,-2],[2,0],[-2,0]]);
+      var moved=false;
+      for(var i=0;i<dirs.length;i++){
+        var nr=r+dirs[i][0], nc=c+dirs[i][1];
+        if(nr>0 && nr<n-1 && nc>0 && nc<n-1 && grid[nr][nc]){
+          grid[nr][nc]=false;
+          grid[r+dirs[i][0]/2][c+dirs[i][1]/2]=false;
+          stack.push([nr,nc]);
+          moved=true;
+          break;
+        }
+      }
+      if(!moved) stack.pop();
+    }
+    braidMaze(grid, n);
+    return grid;
+  }
+
+  // eliminate dead ends (guarantee >=2 exits per junction) and sprinkle in extra loops,
+  // so the maze always has multiple routes and the player can never get cornered
+  function braidMaze(grid, n){
+    for(var r=1;r<n-1;r+=2){
+      for(var c=1;c<n-1;c+=2){
+        var neighbors = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+        var openExits = neighbors.filter(function(p){
+          return p[0]>=0 && p[0]<n && p[1]>=0 && p[1]<n && !grid[p[0]][p[1]];
+        });
+        if(openExits.length<=1){
+          var candidates=[];
+          neighbors.forEach(function(p){
+            var nr=p[0], nc=p[1];
+            if(nr<=0||nr>=n-1||nc<=0||nc>=n-1) return;
+            if(grid[nr][nc]) candidates.push([nr,nc]);
+          });
+          if(candidates.length){
+            var pick = candidates[Math.floor(Math.random()*candidates.length)];
+            grid[pick[0]][pick[1]] = false;
+          }
+        }
+      }
+    }
+    // extra random loops for richer route variety beyond the minimum fix
+    for(var rr=1;rr<n-1;rr++){
+      for(var cc=1;cc<n-1;cc++){
+        var isConnector = (rr%2===0) !== (cc%2===0);
+        if(isConnector && grid[rr][cc] && Math.random()<0.12){
+          grid[rr][cc]=false;
+        }
+      }
+    }
+  }
+
+  function bfsPath(grid, sr, sc, tr, tc){
+    var n = grid.length;
+    var visited = {};
+    var key0 = sr+','+sc;
+    visited[key0]=true;
+    var queue = [{r:sr,c:sc,path:[{r:sr,c:sc}]}];
+    var qi=0;
+    while(qi<queue.length){
+      var cur = queue[qi++];
+      if(cur.r===tr && cur.c===tc) return cur.path;
+      var dirs=[[0,1],[0,-1],[1,0],[-1,0]];
+      for(var i=0;i<dirs.length;i++){
+        var nr=cur.r+dirs[i][0], nc=cur.c+dirs[i][1];
+        if(nr<0||nr>=n||nc<0||nc>=n) continue;
+        if(grid[nr][nc]) continue;
+        var key=nr+','+nc;
+        if(visited[key]) continue;
+        visited[key]=true;
+        queue.push({r:nr,c:nc,path:cur.path.concat([{r:nr,c:nc}])});
+      }
+    }
+    return null;
+  }
+
+  function mcPickLetterCells(grid, count, avoid){
+    var candidates=[];
+    for(var r=1;r<MAZE_SIZE-1;r++){
+      for(var c=1;c<MAZE_SIZE-1;c++){
+        if(!grid[r][c]){
+          var key=r+','+c;
+          if(avoid.indexOf(key)===-1) candidates.push({r:r,c:c});
+        }
+      }
+    }
+    shuffle(candidates);
+    return candidates.slice(0,count);
+  }
+
+  function startMazeChase(label, rewardEligible){
+    document.getElementById('start-screen').style.display='none';
+    document.getElementById('game-screen').style.display='none';
+    document.getElementById('wordsearch-screen').style.display='none';
+    document.getElementById('airplane-screen').style.display='none';
+    document.getElementById('party-screen').style.display='none';
+    document.getElementById('gravity-screen').style.display='none';
+    document.getElementById('mazechase-screen').style.display='flex';
+
+    mcGrid = generateMaze(MAZE_SIZE);
+    mcPlayer = {r:1,c:1};
+    var corners = [[1,MAZE_SIZE-2],[MAZE_SIZE-2,1],[MAZE_SIZE-2,MAZE_SIZE-2]];
+    mcEnemies = corners.map(function(p){ return {r:p[0], c:p[1]}; });
+    mcWord = randomWordOfLength(6);
+    mcFilled = new Array(6).fill(null);
+    var avoid = [mcPlayer.r+','+mcPlayer.c].concat(mcEnemies.map(function(e){ return e.r+','+e.c; }));
+    var cells = mcPickLetterCells(mcGrid, 6, avoid);
+    mcLetters = mcWord.split('').map(function(ch,i){
+      return {letter:ch, r:cells[i%cells.length].r, c:cells[i%cells.length].c, collected:false};
+    });
+    avoid = avoid.concat(cells.map(function(p){ return p.r+','+p.c; }));
+    var heavyCells = mcPickLetterCells(mcGrid, 2, avoid);
+    mcHeavyPickups = heavyCells.map(function(p){ return {r:p.r, c:p.c, collected:false}; });
+    avoid = avoid.concat(heavyCells.map(function(p){ return p.r+','+p.c; }));
+    var blockCells = mcPickLetterCells(mcGrid, 4, avoid);
+    mcBlocks = blockCells.map(function(p){ return {r:p.r, c:p.c}; });
+    mcHeavyExpiresAt = null;
+    mcDone=false;
+    mcStrikes=0;
+    mcRewardEligible = !!rewardEligible;
+    mcLabelStored = label;
+    document.getElementById('mc-label').textContent = label || '';
+    document.getElementById('mc-goal').innerHTML = 'Collect: <b>'+mcWord+'</b>';
+    document.getElementById('mc-retry').style.display='none';
+    updateMcHeavyUI();
+    renderMcProgress();
+    renderMaze();
+    setMcStatus('Collect all 6 letters — avoid the foxes!');
+    clearInterval(mcTickHandle);
+    mcTickHandle = setInterval(mcTick, MC_TICK_MS);
+  }
+
+  function renderMcProgress(){
+    var el = document.getElementById('mc-progress');
+    el.innerHTML='';
+    mcWord.split('').forEach(function(ch,i){
+      var span=document.createElement('span');
+      span.className='air-letter'+(mcFilled[i]?' filled':'');
+      span.textContent = mcFilled[i] ? ch : '_';
+      el.appendChild(span);
+    });
+  }
+
+  function setMcStatus(msg){ document.getElementById('mc-status').textContent = msg; }
+
+  function updateMcHeavyUI(){
+    var el = document.getElementById('mc-heavy-count');
+    if(mcHeavyExpiresAt && Date.now()<mcHeavyExpiresAt){
+      var secs = Math.ceil((mcHeavyExpiresAt-Date.now())/1000);
+      el.textContent = '💪 Active: '+secs+'s left — push through any block!';
+    } else {
+      if(mcHeavyExpiresAt) mcHeavyExpiresAt=null;
+      el.textContent = '';
+    }
+  }
+
+  function renderMaze(){
+    var el = document.getElementById('maze-grid');
+    el.innerHTML='';
+    el.style.gridTemplateColumns = 'repeat('+MAZE_SIZE+',1fr)';
+    for(var r=0;r<MAZE_SIZE;r++){
+      for(var c=0;c<MAZE_SIZE;c++){
+        var cell = document.createElement('div');
+        cell.className='maze-cell '+(mcGrid[r][c] ? 'mc-wall' : 'mc-path');
+        var letterHere = mcLetters.find(function(L){ return !L.collected && L.r===r && L.c===c; });
+        if(letterHere){
+          cell.className+=' mc-letter';
+          cell.textContent = letterHere.letter;
+        }
+        var heavyHere = mcHeavyPickups.find(function(H){ return !H.collected && H.r===r && H.c===c; });
+        if(heavyHere){
+          cell.className+=' mc-heavy';
+          cell.textContent = '💪';
+        }
+        var blockHere = mcBlocks.some(function(B){ return B.r===r && B.c===c; });
+        if(blockHere){
+          cell.className+=' mc-block';
+          cell.textContent = '🧱';
+        }
+        var enemyHere = mcEnemies.some(function(e){ return e.r===r && e.c===c; });
+        if(enemyHere){
+          cell.className+=' mc-enemy';
+          cell.textContent='🦊';
+        }
+        if(mcPlayer.r===r && mcPlayer.c===c){
+          cell.className+=' mc-player';
+          cell.textContent='🐦';
+        }
+        el.appendChild(cell);
+      }
+    }
+  }
+
+  function mcCheckLetterPickup(){
+    var found = mcLetters.find(function(L){ return !L.collected && L.r===mcPlayer.r && L.c===mcPlayer.c; });
+    if(!found) return;
+    found.collected=true;
+    for(var i=0;i<mcWord.length;i++){
+      if(mcWord[i]===found.letter && !mcFilled[i]){ mcFilled[i]=found.letter; break; }
+    }
+    renderMcProgress();
+    if(mcFilled.every(function(x){ return x; })){
+      mcWin();
+    } else {
+      setMcStatus('Collected "'+found.letter+'"! '+mcFilled.filter(Boolean).length+'/6 letters found.');
+    }
+  }
+
+  function mcCheckCollision(){
+    if(mcDone) return;
+    var hit = mcEnemies.some(function(e){ return e.r===mcPlayer.r && e.c===mcPlayer.c; });
+    if(hit) mcLifeLost();
+  }
+
+  function mcLifeLost(){
+    mcStrikes++;
+    if(mcStrikes>=3){ mcLose(); return; }
+    setMcStatus('Caught! Strike '+mcStrikes+'/3 — back to start.');
+    mcPlayer = {r:1,c:1};
+    var corners = [[1,MAZE_SIZE-2],[MAZE_SIZE-2,1],[MAZE_SIZE-2,MAZE_SIZE-2]];
+    mcEnemies = corners.map(function(p){ return {r:p[0], c:p[1]}; });
+    renderMaze();
+  }
+
+  function mcLose(){
+    mcDone=true;
+    clearInterval(mcTickHandle);
+    setMcStatus('💀 Caught 3 times — try again!');
+    document.getElementById('mc-retry').style.display='inline-block';
+  }
+
+  function mcWin(){
+    mcDone=true;
+    clearInterval(mcTickHandle);
+    var rewarded = grantRewardIfEligible(mcRewardEligible);
+    if(rewarded) setMcStatus('🎉 "'+mcWord+'" complete! 🪶 +50 Feathers earned!');
+    else if(mcRewardEligible) setMcStatus('🎉 "'+mcWord+'" complete! (Already claimed today\'s reward.)');
+    else setMcStatus('🎉 "'+mcWord+'" complete! (Practice mode — no reward, not today\'s challenge.)');
+  }
+
+  function mcCheckHeavyPickup(){
+    var found = mcHeavyPickups.find(function(H){ return !H.collected && H.r===mcPlayer.r && H.c===mcPlayer.c; });
+    if(!found) return;
+    found.collected=true;
+    mcHeavyExpiresAt = Date.now()+MC_HEAVY_DURATION_MS;
+    updateMcHeavyUI();
+    setMcStatus('💪 Heavyweight active for 5 seconds — push through any block!');
+  }
+
+  function wouldStrandLetters(grid, fromR, fromC){
+    var uncollected = mcLetters.filter(function(L){ return !L.collected; });
+    for(var i=0;i<uncollected.length;i++){
+      var p = bfsPath(grid, fromR, fromC, uncollected[i].r, uncollected[i].c);
+      if(!p) return true;
+    }
+    return false;
+  }
+
+  function mcMove(dr,dc){
+    if(mcDone || !mcPlayer) return;
+    var nr = mcPlayer.r+dr, nc = mcPlayer.c+dc;
+    if(nr<0||nr>=MAZE_SIZE||nc<0||nc>=MAZE_SIZE) return;
+
+    var heavyActive = mcHeavyExpiresAt && Date.now()<mcHeavyExpiresAt;
+
+    if(mcGrid[nr][nc]){
+      if(!heavyActive) return;
+      var wr = nr+dr, wc = nc+dc;
+      var wInBounds = wr>0 && wr<MAZE_SIZE-1 && wc>0 && wc<MAZE_SIZE-1;
+      var wDestOpen = wInBounds && !mcGrid[wr][wc];
+      var wDestBlock = wInBounds && mcBlocks.some(function(B){ return B.r===wr && B.c===wc; });
+      var wDestEnemy = wInBounds && mcEnemies.some(function(e){ return e.r===wr && e.c===wc; });
+      var wDestLetter = wInBounds && mcLetters.some(function(L){ return !L.collected && L.r===wr && L.c===wc; });
+      var wDestHeavy = wInBounds && mcHeavyPickups.some(function(H){ return !H.collected && H.r===wr && H.c===wc; });
+      if(!wDestOpen || wDestBlock || wDestEnemy || wDestLetter || wDestHeavy){
+        setMcStatus(HEAVY_ICON + " Can't push that wall any further \u2014 blocked.");
+        return;
+      }
+      mcGrid[nr][nc]=false;
+      mcGrid[wr][wc]=true;
+      if(wouldStrandLetters(mcGrid, nr, nc)){
+        mcGrid[nr][nc]=true;
+        mcGrid[wr][wc]=false;
+        setMcStatus(HEAVY_ICON + " That would seal off a letter \u2014 try pushing elsewhere.");
+        return;
+      }
+      setMcStatus(HEAVY_ICON + " Pushed the wall out of the way!");
+    } else {
+      var blockIdx = mcBlocks.findIndex(function(B){ return B.r===nr && B.c===nc; });
+      if(blockIdx!==-1){
+        if(!heavyActive) return;
+        var br = nr+dr, bc = nc+dc;
+        var inBounds = br>=0 && br<MAZE_SIZE && bc>=0 && bc<MAZE_SIZE;
+        var destWall = !inBounds || mcGrid[br][bc];
+        var destBlocked = inBounds && mcBlocks.some(function(B){ return B.r===br && B.c===bc; });
+        var destEnemy = inBounds && mcEnemies.some(function(e){ return e.r===br && e.c===bc; });
+        if(destWall || destBlocked || destEnemy){
+          setMcStatus(HEAVY_ICON + " Can't push that block any further \u2014 blocked.");
+          return;
+        }
+        mcBlocks[blockIdx].r = br;
+        mcBlocks[blockIdx].c = bc;
+        setMcStatus(HEAVY_ICON + " Pushed the block out of the way!");
+      }
+    }
+
+    mcPlayer.r=nr; mcPlayer.c=nc;
+    mcCheckHeavyPickup();
+    mcCheckLetterPickup();
+    mcCheckCollision();
+    renderMaze();
+  }
+
+  function mcTick(){
+    if(mcDone) return;
+    mcEnemies.forEach(function(e){
+      var path = bfsPath(mcGrid, e.r, e.c, mcPlayer.r, mcPlayer.c);
+      if(path && path.length>1){ e.r=path[1].r; e.c=path[1].c; }
+    });
+    updateMcHeavyUI();
+    mcCheckCollision();
+    renderMaze();
+  }
+
+  /* ================= wiring ================= */
+  document.getElementById('mode-local').addEventListener('click', function(){ startGame(false); });
+  document.getElementById('mode-ai').addEventListener('click', function(){ startGame(true); });
+  document.getElementById('btn-restart').addEventListener('click', function(){
+    clearInterval(timerHandle);
+    document.getElementById('game-screen').style.display='none';
+    document.getElementById('win-overlay').style.display='none';
+    document.getElementById('start-screen').style.display='flex';
+  });
+  document.getElementById('btn-play-again').addEventListener('click', function(){
+    document.getElementById('win-overlay').style.display='none';
+    var vsAI = players[1].isAI;
+    startGame(vsAI, currentConfig);
+  });
+  document.getElementById('ws-back').addEventListener('click', function(){
+    document.getElementById('wordsearch-screen').style.display='none';
+    document.getElementById('start-screen').style.display='flex';
+  });
+  document.getElementById('air-back').addEventListener('click', function(){
+    clearInterval(airInterval);
+    cancelAnimationFrame(airRAF);
+    airDone=true;
+    document.getElementById('airplane-screen').style.display='none';
+    document.getElementById('start-screen').style.display='flex';
+  });
+  document.getElementById('air-up').addEventListener('click', function(){ movePlane(-1); });
+  document.getElementById('air-down').addEventListener('click', function(){ movePlane(1); });
+  document.getElementById('air-shoot').addEventListener('click', function(){ shootCurrentLane(); });
+  document.getElementById('air-retry').addEventListener('click', function(){
+    startAirplane(airOriginalWords, airLabelStored, airRewardEligible);
+  });
+  document.addEventListener('keydown', function(e){
+    var airScreen = document.getElementById('airplane-screen');
+    if(airScreen && airScreen.style.display==='flex'){
+      if(e.key==='ArrowUp'){ e.preventDefault(); movePlane(-1); }
+      else if(e.key==='ArrowDown'){ e.preventDefault(); movePlane(1); }
+      else if(e.key==='ArrowLeft'){ e.preventDefault(); shootCurrentLane(); }
+      return;
+    }
+    var gravScreen = document.getElementById('gravity-screen');
+    if(gravScreen && gravScreen.style.display==='flex'){
+      if(e.key==='ArrowDown'){ e.preventDefault(); gbSpawnNext(); }
+      else if(e.key==='ArrowLeft'){ e.preventDefault(); gbMove(-1); }
+      else if(e.key==='ArrowRight'){ e.preventDefault(); gbMove(1); }
+      else if(e.key==='ArrowUp'){ e.preventDefault(); gbJump(); }
+      return;
+    }
+    var mazeScreen = document.getElementById('mazechase-screen');
+    if(mazeScreen && mazeScreen.style.display==='flex'){
+      if(e.key==='ArrowUp'){ e.preventDefault(); mcMove(-1,0); }
+      else if(e.key==='ArrowDown'){ e.preventDefault(); mcMove(1,0); }
+      else if(e.key==='ArrowLeft'){ e.preventDefault(); mcMove(0,-1); }
+      else if(e.key==='ArrowRight'){ e.preventDefault(); mcMove(0,1); }
+      return;
+    }
+  });
+  document.getElementById('party-back').addEventListener('click', function(){
+    document.getElementById('party-screen').style.display='none';
+    document.getElementById('start-screen').style.display='flex';
+  });
+  document.getElementById('party-retry').addEventListener('click', function(){
+    startParty(partyLabel, partyRewardEligible);
+  });
+  document.getElementById('gb-down').addEventListener('click', gbSpawnNext);
+  document.getElementById('gb-left').addEventListener('click', function(){ gbMove(-1); });
+  document.getElementById('gb-right').addEventListener('click', function(){ gbMove(1); });
+  document.getElementById('gb-jump').addEventListener('click', gbJump);
+  document.getElementById('gb-retry').addEventListener('click', function(){
+    startGravity(gbLabelStored, gbRewardEligible);
+  });
+  document.getElementById('gb-back').addEventListener('click', function(){
+    gbDone=true;
+    clearInterval(gbTickHandle);
+    document.getElementById('gravity-screen').style.display='none';
+    document.getElementById('start-screen').style.display='flex';
+  });
+  document.getElementById('mc-up').addEventListener('click', function(){ mcMove(-1,0); });
+  document.getElementById('mc-down').addEventListener('click', function(){ mcMove(1,0); });
+  document.getElementById('mc-left').addEventListener('click', function(){ mcMove(0,-1); });
+  document.getElementById('mc-right').addEventListener('click', function(){ mcMove(0,1); });
+  document.getElementById('mc-retry').addEventListener('click', function(){
+    startMazeChase(mcLabelStored, mcRewardEligible);
+  });
+  document.getElementById('mc-back').addEventListener('click', function(){
+    mcDone=true;
+    clearInterval(mcTickHandle);
+    document.getElementById('mazechase-screen').style.display='none';
+    document.getElementById('start-screen').style.display='flex';
+  });
+
+  /* ================= daily challenge ================= */
+  var WORDSEARCH_WORDS = ['WORD','BIRD','WORDSEARCH','MONDAY','CHALLENGE'];
+  var AIRPLANE_WORDS = ['AIRPLANE','WORD','BIRD','WEDNESDAY','SHOOT'];
+
+  var DAILY_CONFIGS = {
+    0: {kind:'party',      icon:'🍟', title:'Party', label:"Sunday · Party"},
+    1: {kind:'wordsearch', icon:'🔍', title:'Word Search', label:"Monday · Word Search", words:WORDSEARCH_WORDS},
+    2: {kind:'wordsbird',  icon:'🦅', title:'Supermatch',  label:"Tuesday · Supermatch", size:11, minLen:7, maxLen:11},
+    3: {kind:'airplane',   icon:'✈️', title:'Bird Airplane', label:"Wednesday · Bird Airplane", words:AIRPLANE_WORDS},
+    4: {kind:'wordsbird',  icon:'🦖', title:'Giantmatch', label:"Thursday · Giantmatch", size:15, minLen:10, maxLen:15},
+    5: {kind:'gravity',    icon:'🪽', title:"Gravity's Bird", label:"Friday · Gravity's Bird"},
+    6: {kind:'mazechase',  icon:'🦊', title:'Maze Chase', label:"Saturday · Maze Chase"}
+  };
+
+  function seededIndex(str, mod){
+    var hash=0;
+    for(var i=0;i<str.length;i++){ hash = (hash*31 + str.charCodeAt(i)) | 0; }
+    return Math.abs(hash) % mod;
+  }
+
+  function getTodayChallenge(){
+    var d = new Date();
+    var day = d.getDay(); // 0 Sun .. 6 Sat
+    if(DAILY_CONFIGS[day]) return DAILY_CONFIGS[day];
+    // defensive fallback (all 7 days are configured above, so this shouldn't trigger)
+    var pool = [DAILY_CONFIGS[0], DAILY_CONFIGS[1], DAILY_CONFIGS[2], DAILY_CONFIGS[3], DAILY_CONFIGS[4], DAILY_CONFIGS[5], DAILY_CONFIGS[6]];
+    var dateStr = d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+    return pool[seededIndex(dateStr, pool.length)];
+  }
+
+  function initDailyCard(){
+    var challenge = getTodayChallenge();
+    document.getElementById('daily-icon').textContent = challenge.icon;
+    document.getElementById('daily-title').textContent = challenge.title;
+    document.getElementById('daily-sub').textContent = "Today's challenge";
+    document.getElementById('mode-daily').addEventListener('click', function(){
+      launchChallenge(challenge, true);
+    });
+
+    var otherRow = document.getElementById('other-row');
+    otherRow.innerHTML='';
+    Object.keys(DAILY_CONFIGS).forEach(function(key){
+      var c = DAILY_CONFIGS[key];
+      if(c===challenge) return;
+      var chip = document.createElement('div');
+      chip.className='other-chip';
+      chip.innerHTML = '<span class="oc-icon">'+c.icon+'</span><span>'+c.title+'</span>';
+      chip.addEventListener('click', function(){ launchChallenge(c, false); });
+      otherRow.appendChild(chip);
+    });
+  }
+
+  function launchChallenge(challenge, rewardEligible){
+    if(challenge.kind==='wordsearch'){
+      startWordSearch(challenge.words, challenge.label, rewardEligible);
+    } else if(challenge.kind==='airplane'){
+      startAirplane(challenge.words, challenge.label, rewardEligible);
+    } else if(challenge.kind==='party'){
+      startParty(challenge.label, rewardEligible);
+    } else if(challenge.kind==='gravity'){
+      startGravity(challenge.label, rewardEligible);
+    } else if(challenge.kind==='mazechase'){
+      startMazeChase(challenge.label, rewardEligible);
+    } else if(challenge.kind==='wordsbird'){
+      startGame(true, {size:challenge.size, minLen:challenge.minLen, maxLen:challenge.maxLen, label:challenge.label, rewardEligible:rewardEligible});
+    }
+  }
+  loadPersisted();
+  updateFeatherUI();
+  applyTheme(currentTheme);
+  initDailyCard();
+  renderShop();
+
+})();
+</script>
+</body>
+</html>
